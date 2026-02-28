@@ -1,0 +1,23 @@
+{
+  "name": "Attendance Dashboard Pro",
+  "version": "1.1",
+  "manifest_version": 3,
+  "description": "Bảng điều khiển chấm công hiện đại cho Asoft",
+  "host_permissions": [
+    "http://192.168.10.213:14444/*"
+  ],
+  "permissions": [
+    "cookies",
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://192.168.10.213:14444/Contentmaster/Index/HRM/HRMF2260*"
+      ],
+      "js": [
+        "content.js"
+      ]
+    }
+  ]
+}

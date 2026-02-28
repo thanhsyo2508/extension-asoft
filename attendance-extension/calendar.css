@@ -1,0 +1,36 @@
+#attendance-app{
+  position:fixed;
+  top:20px;
+  right:20px;
+  width:900px;
+  background:white;
+  z-index:999999;
+  box-shadow:0 0 20px rgba(0,0,0,0.3);
+  padding:20px;
+  font-family:Arial;
+}
+
+.calendar{
+  display:grid;
+  grid-template-columns: repeat(7,1fr);
+  gap:10px;
+}
+
+.day{
+  border:1px solid #ddd;
+  height:100px;
+  padding:5px;
+  font-size:12px;
+}
+
+.day h4{
+  margin:0;
+  color:#0078d4;
+}
+
+.card{
+  background:#e3f2fd;
+  margin-top:4px;
+  padding:3px;
+  border-radius:4px;
+}

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Attendance Calendar Test</title>
+
+<style>
+body{font-family:Arial;background:#f5f5f5;padding:20px}
+.calendar{
+  display:grid;
+  grid-template-columns: repeat(7,1fr);
+  gap:10px;
+}
+.day{
+  background:white;
+  border:1px solid #ddd;
+  height:110px;
+  padding:6px;
+}
+.day h4{margin:0;color:#0078d4}
+.card{
+  background:#e3f2fd;
+  padding:3px;
+  margin-top:4px;
+  border-radius:4px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Attendance Calendar (Test)</h2>
+<input type="month" id="monthPicker">
+<button onclick="load()">Load</button>
+
+<div id="calendar" class="calendar"></div>
+
+<script>
+const now = new Date();
+document.getElementById("monthPicker").value =
+  now.toISOString().slice(0,7);
+
+async function fetchAttendance(month){
+  const [year, m] = month.split("-");
+  const from = `01/${m}/${year}`;
+  const to   = `31/${m}/${year}`;
+
+  const body = new URLSearchParams({
+    page:1,
+    pageSize:200,
+    "args[0].Key":"ftype[]",
+    "args[0].Value[0]":5,
+    "args[1].Key":"dttype[]",
+    "args[1].Value[0]":9,
+    "args[2].Key":"key[]",
+    "args[2].Value[0]":"AbsentDate",
+    "args[3].Key":"value[]",
+    "args[3].Value[0]":from,
+    "args[3].Value[1]":to,
+    "args[4].Key":"systemInfo[]",
+    "args[4].Value[0]":"HRMF2260",
+    "args[4].Value[1]":"HRM",
+    "args[4].Value[2]":"HRMT2260"
+  });
+
+  const res = await fetch(
+    "http://192.168.10.213:14444/GridCommon/Read?TableName=HRMT2260",
+    {
+      method:"POST",
+      credentials:"include",
+      headers:{
+        "Content-Type":"application/x-www-form-urlencoded",
+        "X-Requested-With":"XMLHttpRequest"
+      },
+      body
+    });
+
+  return res.json();
+}
+
+function renderCalendar(data, month){
+  const cal = document.getElementById("calendar");
+  cal.innerHTML="";
+
+  const days = new Date(month.split("-")[0], month.split("-")[1], 0).getDate();
+
+  const map = {};
+  data.Data.forEach(r=>{
+     const d = new Date(parseInt(r.AbsentDate.match(/\d+/)[0]));
+     const day = d.getDate();
+     if(!map[day]) map[day]=[];
+     map[day].push(r);
+  });
+
+  for(let i=1;i<=days;i++){
+    const div = document.createElement("div");
+    div.className="day";
+    div.innerHTML = `<h4>${i}</h4>`;
+
+    if(map[i]){
+      map[i].forEach(r=>{
+        div.innerHTML += `
+          <div class="card">
+            ${r.FullName}<br>
+            ${r.AbsentHour || ""}
+          </div>`;
+      });
+    }
+
+    cal.appendChild(div);
+  }
+}
+
+async function load(){
+  const month = document.getElementById("monthPicker").value;
+  const data = await fetchAttendance(month);
+  console.log(data);
+  renderCalendar(data, month);
+}
+</script>
+
+</body>
+</html>
