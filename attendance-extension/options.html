@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cấu hình - Attendance Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 500px;
+      padding: 40px;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    input[type="text"], input[type="url"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s;
+      font-family: 'Monaco', monospace;
+    }
+
+    input[type="text"]:focus, input[type="url"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .help-text {
+      margin-top: 6px;
+      color: #999;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .form-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+    }
+
+    .form-section h3 {
+      color: #333;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .status-message {
+      margin-top: 15px;
+      padding: 12px 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      display: none;
+      animation: slideIn 0.3s ease;
+    }
+
+    .status-message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      display: block;
+    }
+
+    .status-message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      display: block;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .example-box {
+      background: white;
+      border-left: 4px solid #667eea;
+      padding: 12px;
+      margin-top: 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #555;
+      font-family: 'Monaco', monospace;
+    }
+
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      color: #999;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .info-box {
+      background: #e3f2fd;
+      border-left: 4px solid #2196F3;
+      padding: 12px;
+      border-radius: 4px;
+      margin-top: 15px;
+      font-size: 13px;
+      color: #1565c0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚙️ Cấu hình</h1>
+    <p class="subtitle">Attendance Dashboard Pro</p>
+
+    <div class="form-section">
+      <h3>🌐 Máy Chủ</h3>
+
+      <div class="form-group">
+        <label for="serverHost">URL Máy Chủ *</label>
+        <input 
+          type="url" 
+          id="serverHost" 
+          placeholder="http://192.168.10.213:14444"
+          required
+        >
+        <div class="help-text">
+          Địa chỉ đầy đủ của máy chủ HRM (bao gồm protocol + port)
+        </div>
+        <div class="example-box">
+          Ví dụ: http://192.168.10.213:14444
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>👤 Phòng Ban</h3>
+
+      <div class="form-group">
+        <label for="divisionId">Mã Phòng Ban *</label>
+        <input 
+          type="text" 
+          id="divisionId" 
+          placeholder="MA"
+          required
+        >
+        <div class="help-text">
+          Mã phòng ban trong hệ thống (thường là "MA")
+        </div>
+      </div>
+    </div>
+
+    <button id="saveBtn">💾 Lưu Cấu Hình</button>
+
+    <div id="statusMessage" class="status-message"></div>
+
+    <div class="info-box">
+      💡 Các thay đổi sẽ được lưu tự động. Extension sẽ sử dụng cài đặt này để kết nối với máy chủ.
+    </div>
+
+    <div class="footer">
+      <p>Phiên bản 1.1 | Cập nhật: 02/03/2026</p>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

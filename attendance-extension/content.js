@@ -1,6 +1,24 @@
 // remove old
 document.getElementById("attendance-ext")?.remove();
 
+/* ========= SERVER CONFIGURATION ========= */
+let SERVER_CONFIG = {
+  serverHost: 'http://192.168.10.213:14444',
+  divisionId: 'MA'
+};
+
+async function loadServerConfig() {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(['asoft-server-config'], (result) => {
+      if (result['asoft-server-config']) {
+        SERVER_CONFIG = result['asoft-server-config'];
+      }
+      console.log('[Attendance Dashboard] Server Config:', SERVER_CONFIG);
+      resolve(SERVER_CONFIG);
+    });
+  });
+}
+
 /* ========= STORAGE & CACHE ========= */
 const STORAGE_KEY = "asoft-attendance-config";
 const config = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"top":"100px","left":"100px","width":"1080px","height":"auto","zoom":1}');
@@ -271,9 +289,10 @@ const UTILS = {
 
 async function fetchPeriodDates(monthStr) {
   const [y, m] = monthStr.split("-");
-  const body = new URLSearchParams({ DivisionIDPeriod: "MA", TranMonth: m, TranYear: y });
+  const body = new URLSearchParams({ DivisionIDPeriod: SERVER_CONFIG.divisionId, TranMonth: m, TranYear: y });
   try {
-    const r = await fetch("/Period/BeginEndDate", {
+    const url = `${SERVER_CONFIG.serverHost}/Period/BeginEndDate`;
+    const r = await fetch(url, {
       method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
     });
     return await r.json();
@@ -298,7 +317,7 @@ async function fetchPeriodUpdate(monthStr, periodData) {
     IsNoReset: "",
     periodTitle: "Chọn kỳ kế toán",
     UrlUpdatePeriod: "/Period/Update",
-    DivisionIDPeriod: "MA",
+    DivisionIDPeriod: SERVER_CONFIG.divisionId,
     Period: `${m.padStart(2, '0')}/${y}`,
     VoucherDate: voucherDate,
     BeginDate: beginDateStr,
@@ -311,7 +330,8 @@ async function fetchPeriodUpdate(monthStr, periodData) {
   console.log("Period Update Payload:", body.toString());
   
   try {
-    const r = await fetch("/Period/Update", {
+    const url = `${SERVER_CONFIG.serverHost}/Period/Update`;
+    const r = await fetch(url, {
       method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
     });
     console.log("Period Update HTTP Status:", r.status);
@@ -335,7 +355,8 @@ async function fetchAttendance(monthStr) {
     "args[4].Key": "systemInfo[]", "args[4].Value[0]": "HRMF2260", "args[4].Value[1]": "HRM", "args[4].Value[2]": "HRMT2260"
   });
   try {
-    const r = await fetch("/GridCommon/Read?TableName=HRMT2260", {
+    const url = `${SERVER_CONFIG.serverHost}/GridCommon/Read?TableName=HRMT2260`;
+    const r = await fetch(url, {
       method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
     });
     return r.json();
@@ -351,7 +372,8 @@ async function fetchShift(monthStr) {
     "args[2].Key": "systemInfo[]", "args[2].Value[0]": "HRM", "args[2].Value[1]": "HRMF2323", "args[2].Value[2]": "HRMT2323"
   });
   try {
-    const r = await fetch("/GridCommon/ReadEdit?TableName=HRMT2323", {
+    const url = `${SERVER_CONFIG.serverHost}/GridCommon/ReadEdit?TableName=HRMT2323`;
+    const r = await fetch(url, {
       method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
     });
     return r.json();
@@ -368,7 +390,8 @@ async function fetchLeaveRequests(monthStr) {
     "args[4].Key": "systemInfo[]", "args[4].Value[0]": "HRMF2360", "args[4].Value[1]": "HRM", "args[4].Value[2]": "OOT9000"
   });
   try {
-    const r = await fetch("/GridCommon/Read?TableName=HRMT2260", {
+    const url = `${SERVER_CONFIG.serverHost}/GridCommon/Read?TableName=HRMT2260`;
+    const r = await fetch(url, {
       method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
     });
     return r.json();
@@ -378,7 +401,7 @@ async function fetchLeaveRequests(monthStr) {
 async function fetchRequestDetail(apk) {
   if (DETAIL_CACHE.has(apk)) return DETAIL_CACHE.get(apk);
   try {
-    const url = `/ViewMasterDetail2/Index/HRM/HRMF2362?PK=${apk}&Table=OOT9000&key=APK&DivisionID=MA`;
+    const url = `${SERVER_CONFIG.serverHost}/ViewMasterDetail2/Index/HRM/HRMF2362?PK=${apk}&Table=OOT9000&key=APK&DivisionID=${SERVER_CONFIG.divisionId}`;
     const r = await fetch(url);
     const html = await r.text();
     const data = UTILS.parseHTMLDetail(html);
@@ -664,4 +687,8 @@ document.getElementById("prevMonth").onclick = () => { const d = new Date(picker
 document.getElementById("nextMonth").onclick = () => { const d = new Date(picker.value + "-01"); d.setMonth(d.getMonth() + 1); picker.value = d.toISOString().slice(0, 7); load(); };
 document.getElementById("closeBtn").onclick = () => app.remove();
 
-load();
+// Initialize: Load server config then load data
+(async () => {
+  await loadServerConfig();
+  load();
+})();
