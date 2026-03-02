@@ -170,6 +170,80 @@
       font-size: 13px;
       color: #1565c0;
     }
+
+    .theme-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .theme-option {
+      position: relative;
+    }
+
+    .theme-option input[type="radio"] {
+      display: none;
+    }
+
+    .theme-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .theme-label:hover {
+      border-color: #667eea;
+      background: #f8f9fa;
+    }
+
+    .theme-option input[type="radio"]:checked + .theme-label {
+      border-color: #667eea;
+      background: #667eea;
+      color: white;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .theme-preview {
+      width: 30px;
+      height: 30px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+
+    .theme-dark .theme-preview {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    }
+
+    .theme-light .theme-preview {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border: 1px solid #cbd5e1;
+    }
+
+    .theme-spring .theme-preview {
+      background: linear-gradient(135deg, #fce7f3 0%, #e9d5ff 100%);
+    }
+
+    .theme-summer .theme-preview {
+      background: linear-gradient(135deg, #fef08a 0%, #fed7aa 100%);
+    }
+
+    .theme-autumn .theme-preview {
+      background: linear-gradient(135deg, #fed7aa 0%, #fda34b 100%);
+    }
+
+    .theme-winter .theme-preview {
+      background: linear-gradient(135deg, #cffafe 0%, #bae6fd 100%);
+    }
   </style>
 </head>
 <body>
@@ -210,6 +284,63 @@
         >
         <div class="help-text">
           Mã phòng ban trong hệ thống (thường là "MA")
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>🎨 Chủ Đề (Theme)</h3>
+
+      <div class="form-group">
+        <label>Chọn chủ đề giao diện:</label>
+        <div class="theme-selector">
+          <div class="theme-option theme-dark">
+            <input type="radio" id="themeDark" name="theme" value="dark" checked>
+            <label for="themeDark" class="theme-label">
+              <div class="theme-preview"></div>
+              Tối
+            </label>
+          </div>
+
+          <div class="theme-option theme-light">
+            <input type="radio" id="themeLight" name="theme" value="light">
+            <label for="themeLight" class="theme-label">
+              <div class="theme-preview"></div>
+              Sáng
+            </label>
+          </div>
+
+          <div class="theme-option theme-spring">
+            <input type="radio" id="themeSpring" name="theme" value="spring">
+            <label for="themeSpring" class="theme-label">
+              <div class="theme-preview"></div>
+              Xuân
+            </label>
+          </div>
+
+          <div class="theme-option theme-summer">
+            <input type="radio" id="themeSummer" name="theme" value="summer">
+            <label for="themeSummer" class="theme-label">
+              <div class="theme-preview"></div>
+              Hè
+            </label>
+          </div>
+
+          <div class="theme-option theme-autumn">
+            <input type="radio" id="themeAutumn" name="theme" value="autumn">
+            <label for="themeAutumn" class="theme-label">
+              <div class="theme-preview"></div>
+              Thu
+            </label>
+          </div>
+
+          <div class="theme-option theme-winter">
+            <input type="radio" id="themeWinter" name="theme" value="winter">
+            <label for="themeWinter" class="theme-label">
+              <div class="theme-preview"></div>
+              Đông
+            </label>
+          </div>
         </div>
       </div>
     </div>

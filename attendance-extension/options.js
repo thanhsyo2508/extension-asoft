@@ -1,7 +1,8 @@
 // Default configuration
 const DEFAULT_CONFIG = {
   serverHost: 'http://192.168.10.213:14444',
-  divisionId: 'MA'
+  divisionId: 'MA',
+  theme: 'dark'
 };
 
 const STORAGE_KEY = 'asoft-server-config';
@@ -12,12 +13,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   document.getElementById('serverHost').value = config.serverHost;
   document.getElementById('divisionId').value = config.divisionId;
+  
+  // Set selected theme
+  const themeRadio = document.getElementById(`theme${config.theme.charAt(0).toUpperCase() + config.theme.slice(1)}`);
+  if (themeRadio) {
+    themeRadio.checked = true;
+  }
 });
 
 // Save configuration on button click
 document.getElementById('saveBtn').addEventListener('click', async () => {
   const serverHost = document.getElementById('serverHost').value.trim();
   const divisionId = document.getElementById('divisionId').value.trim();
+  const theme = document.querySelector('input[name="theme"]:checked').value;
   const statusDiv = document.getElementById('statusMessage');
 
   // Validate inputs
@@ -43,6 +51,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   const config = {
     serverHost: serverHost,
     divisionId: divisionId,
+    theme: theme,
     savedAt: new Date().toISOString()
   };
 

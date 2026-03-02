@@ -4,7 +4,8 @@ document.getElementById("attendance-ext")?.remove();
 /* ========= SERVER CONFIGURATION ========= */
 let SERVER_CONFIG = {
   serverHost: 'http://192.168.10.213:14444',
-  divisionId: 'MA'
+  divisionId: 'MA',
+  theme: 'dark'
 };
 
 async function loadServerConfig() {
@@ -14,9 +15,26 @@ async function loadServerConfig() {
         SERVER_CONFIG = result['asoft-server-config'];
       }
       console.log('[Attendance Dashboard] Server Config:', SERVER_CONFIG);
+      applyTheme(SERVER_CONFIG.theme || 'dark');
       resolve(SERVER_CONFIG);
     });
   });
+}
+
+/* ========= THEME MANAGEMENT ========= */
+function applyTheme(themeName) {
+  const root = document.getElementById('glassRoot');
+  if (!root) return;
+  
+  // Remove all theme classes
+  root.classList.remove('theme-dark', 'theme-light', 'theme-spring', 'theme-summer', 'theme-autumn', 'theme-winter');
+  
+  // Add the selected theme class (skip dark as it's default)
+  if (themeName !== 'dark') {
+    root.classList.add(`theme-${themeName}`);
+  }
+  
+  console.log(`[Attendance Dashboard] Theme applied: ${themeName}`);
 }
 
 /* ========= STORAGE & CACHE ========= */
@@ -111,6 +129,7 @@ document.body.appendChild(app);
 const style = document.createElement("style");
 style.innerHTML = `
 :root {
+  /* Dark Theme (Default) */
   --bg-glass: rgba(15, 23, 42, 0.92);
   --border-glass: rgba(255, 255, 255, 0.1);
   --primary: #10b981;
@@ -123,6 +142,86 @@ style.innerHTML = `
   --card-bg: rgba(30, 41, 59, 0.6);
   --accent: #3b82f6;
   --request: #a855f7;
+}
+
+/* Light Theme */
+#glassRoot.theme-light {
+  --bg-glass: rgba(248, 250, 252, 0.98);
+  --border-glass: rgba(0, 0, 0, 0.1);
+  --primary: #0d9488;
+  --primary-glow: rgba(13, 148, 136, 0.2);
+  --warning: #d97706;
+  --danger: #dc2626;
+  --forgot: #f97316;
+  --text-main: #1e293b;
+  --text-muted: #475569;
+  --card-bg: rgba(241, 245, 249, 0.8);
+  --accent: #2563eb;
+  --request: #9333ea;
+}
+
+/* Spring Theme (Pink/Purple) */
+#glassRoot.theme-spring {
+  --bg-glass: rgba(252, 231, 243, 0.95);
+  --border-glass: rgba(236, 72, 153, 0.2);
+  --primary: #ec4899;
+  --primary-glow: rgba(236, 72, 153, 0.3);
+  --warning: #a855f7;
+  --danger: #ec4899;
+  --forgot: #f472b6;
+  --text-main: #500724;
+  --text-muted: #be185d;
+  --card-bg: rgba(244, 215, 231, 0.6);
+  --accent: #a855f7;
+  --request: #db2777;
+}
+
+/* Summer Theme (Yellow/Orange) */
+#glassRoot.theme-summer {
+  --bg-glass: rgba(254, 252, 232, 0.95);
+  --border-glass: rgba(217, 119, 6, 0.2);
+  --primary: #ea580c;
+  --primary-glow: rgba(234, 88, 12, 0.3);
+  --warning: #d97706;
+  --danger: #f97316;
+  --forgot: #fb923c;
+  --text-main: #4c1d95;
+  --text-muted: #d97706;
+  --card-bg: rgba(254, 215, 170, 0.6);
+  --accent: #f59e0b;
+  --request: #ea580c;
+}
+
+/* Autumn Theme (Orange/Brown) */
+#glassRoot.theme-autumn {
+  --bg-glass: rgba(254, 242, 242, 0.95);
+  --border-glass: rgba(217, 70, 39, 0.2);
+  --primary: #92400e;
+  --primary-glow: rgba(146, 64, 14, 0.3);
+  --warning: #dc2626;
+  --danger: #b45309;
+  --forgot: #d97706;
+  --text-main: #431407;
+  --text-muted: #92400e;
+  --card-bg: rgba(254, 215, 170, 0.6);
+  --accent: #d97706;
+  --request: #b45309;
+}
+
+/* Winter Theme (Blue/Cyan) */
+#glassRoot.theme-winter {
+  --bg-glass: rgba(240, 249, 255, 0.95);
+  --border-glass: rgba(3, 169, 244, 0.2);
+  --primary: #0369a1;
+  --primary-glow: rgba(3, 105, 161, 0.3);
+  --warning: #0284c7;
+  --danger: #0ea5e9;
+  --forgot: #06b6d4;
+  --text-main: #003d82;
+  --text-muted: #0369a1;
+  --card-bg: rgba(207, 250, 254, 0.6);
+  --accent: #06b6d4;
+  --request: #0284c7;
 }
 
 #glassRoot {
