@@ -4,37 +4,24 @@ Một extension cho Microsoft Edge giúp quản lý và theo dõi chấm công m
 
 ---
 
-## ✨ Tính Năng Chính
+### 🎨 Giao Diện & Trải Nghiệm (v2.0)
+- **Glass Morphism Premium**: Thiết kế hiện đại với hiệu ứng mờ nhám và viền sắc nét.
+- **Hệ thống Theme (6 màu)**: 
+  - 🌑 Dark (Mặc định) | ☀️ Light | 🌸 Spring | 🌻 Summer | 🍂 Autumn | ❄️ Winter
+  - Lưu trạng thái theme qua `chrome.storage.sync`.
+- **Micro-animations**:
+  - ✨ **Glow Pulse**: Phát sáng nhẹ cho ngày làm việc đúng giờ.
+  - 🏎️ **Light Sweep**: Hiệu ứng vượt sáng khi di chuột qua ô ngày.
+- **Bộ chọn Tháng/Năm Tùy chỉnh**: Giao diện chọn tháng hiện đại, điều hướng năm nhanh và nút "Hôm nay".
+- **Thống kê Tương tác**: Nhấn vào thẻ thống kê (Ngày công, Trễ, Sớm) để highlight ngay các ngày tương ứng trên lịch.
+- **Skeleton Loading**: Trạng thái chờ với độ tương phản cao, tối ưu theo từng theme.
 
-### 📊 Quản Lý Chấm Công
-- **Lịch chấm công toàn tháng** trên một màn hình duy nhất
-- **Phân loại trạng thái tự động**:
-  - 🟢 **Đúng giờ**: Chấm công đầy đủ trong khung giờ (08:00 - 16:45)
-  - 🟡 **Đi trễ**: Vào sau 08:00
-  - 🔴 **Về sớm**: Ra trước 16:45
-  - ❓ **Quên chấm**: Chỉ có một bản ghi (in hoặc out)
-  - 🏠 **Nghỉ**: Có ca nhưng không chấm công
-  - 📋 **Có đơn**: Đơn xin phép/đi muộn/về sớm
-
-### 🎛️ Điều Khiển Giao Diện
-- **Zoom 50% - 200%** với lưu trữ tự động
-- **Kéo & Thay đổi kích thước** cửa sổ
-- **Lưu cấu hình**: Vị trí, kích thước, mức zoom được giữ lại
-
-### 📈 Thống Kê Nhanh
-- Tổng ngày công trong tháng
-- Tổng lần đi trễ
-- Tổng lần về sớm
-
-### 🗓️ Chuyển Đổi Kỳ Kế Toán
-- Chọn tháng xem
-- Tự động load dữ liệu chấm công, ca làm việc, đơn xin
-
-### 🎨 Giao Diện Hiện Đại
-- Glass Morphism design với hiệu ứng blur
-- Theme tối, dễ nhìn vào ban đêm
-- Responsive trên mọi kích thước màn hình
-- Loading animation với shimmer effect
+### 📤 Tiện Ích & Dữ Liệu
+- **Xuất báo cáo CSV/Excel**: Tải dữ liệu chấm công tháng hiện tại chỉ với 1 click (đã xử lý lỗi font Tiếng Việt).
+- **Hỗ trợ đơn từ phức tạp**: 
+  - Gộp hiển thị khi một ngày có nhiều đơn (📄 x2 Đơn).
+  - Hỗ trợ parser cho đơn Bổ sung quẹt thẻ (**DXBSQT**).
+- **Tự động hóa**: Mặc định load tháng hiện tại ngay khi mở, tự động cập nhật khi chuyển tháng.
 
 ---
 
@@ -59,8 +46,8 @@ Một extension cho Microsoft Edge giúp quản lý và theo dõi chấm công m
 ```
 attendance-dashboard/
 ├── attendance-extension/
-│   ├── manifest.json              # Cấu hình extension
-│   ├── content.js                 # Logic chính (661 dòng)
+│   ├── manifest.json              # Cấu hình extension v3
+│   ├── content.js                 # Logic chính (V2.0 ~1000+ dòng)
 │   ├── popup.html                 # Popup mặc định
 │   └── calendar.css               # Stylesheet tùy chọn
 ├── .gitignore                     # Git ignore file
@@ -104,8 +91,8 @@ POST /GridCommon/ReadEdit?TableName=HRMT2323
 
 ### 5️⃣ Leave Requests
 ```
-POST /GridCommon/Read?TableName=HRMT2260
-Filter by CreateDate
+POST /GridCommon/Read?TableName=OOT9000
+Filter by CreateDate range
 ```
 
 ### 6️⃣ Request Details
@@ -257,8 +244,8 @@ Nếu gặp lỗi:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | 02/03/2026 | Initial release |
-| 1.1 | TBD | Performance improvements |
+| 1.0 | 28/02/2026 | Initial release |
+| 2.0 | 02/03/2026 | Premium UI, Multi-theme, CSV Export, Interactive Stats, DXBSQT support |
 
 ---
 
@@ -283,4 +270,4 @@ Copyright © 2026. All rights reserved.
 ---
 
 **Made with ❤️ for HRM Efficiency**  
-Last updated: 02/03/2026
+Last updated: 02/03/2026 (v2.0)
