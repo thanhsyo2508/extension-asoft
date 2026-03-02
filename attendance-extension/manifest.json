@@ -18,8 +18,8 @@
   "content_scripts": [
     {
       "matches": [
-        "http://*/*",
-        "https://*/*"
+        "http://*/Contentmaster/Index/HRM/HRMF2260*",
+        "https://*/Contentmaster/Index/HRM/HRMF2260*"
       ],
       "js": [
         "content.js"
