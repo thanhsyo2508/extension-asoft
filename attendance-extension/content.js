@@ -51,6 +51,9 @@ const STORAGE_KEY = "asoft-attendance-config";
 const config = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"top":"100px","left":"100px","width":"1080px","height":"auto","zoom":1}');
 const DETAIL_CACHE = new Map();
 let currentZoom = config.zoom || 1;
+const formatMonth = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+let SELECTED_MONTH = formatMonth(new Date());
+let PICKER_YEAR = parseInt(SELECTED_MONTH.split("-")[0]);
 
 /* ========= MODERN UI & MODAL ========= */
 const app = document.createElement("div");
@@ -74,6 +77,7 @@ app.innerHTML = `
         <button data-theme="autumn" title="Autumn" style="background: #fef2f2"></button>
         <button data-theme="winter" title="Winter" style="background: #f0f9ff"></button>
       </div>
+      <button id="exportBtn" class="btn-secondary" title="Xuất báo cáo">📥</button>
       <div class="zoom-controls">
         <button id="zoomOut" title="Thu nhỏ">➖</button>
         <span id="zoomLevel">100%</span>
@@ -103,8 +107,10 @@ app.innerHTML = `
       <div class="calendar-controls">
         <div class="month-nav">
           <button id="prevMonth" class="nav-btn">◀</button>
-          <div class="month-display">
-            <input type="month" id="monthPicker">
+          <div class="month-display" id="monthDPTrigger">
+            <span id="monthText">March 2026</span>
+            <span class="icon" style="font-size: 10px; margin-left: 4px;">▼</span>
+            <div id="monthPickerPopup" class="month-picker-popup" style="display: none;"></div>
           </div>
           <button id="nextMonth" class="nav-btn">▶</button>
         </div>
@@ -159,6 +165,8 @@ style.innerHTML = `
   --card-bg: rgba(30, 41, 59, 0.6);
   --accent: #3b82f6;
   --request: #a855f7;
+  --skeleton-bg: rgba(255, 255, 255, 0.05);
+  --skeleton-shimmer: rgba(255, 255, 255, 0.12);
 }
 
 /* Light Theme */
@@ -175,6 +183,8 @@ style.innerHTML = `
   --card-bg: rgba(241, 245, 249, 0.8);
   --accent: #2563eb;
   --request: #9333ea;
+  --skeleton-bg: rgba(0, 0, 0, 0.06);
+  --skeleton-shimmer: rgba(0, 0, 0, 0.12);
 }
 
 /* Spring Theme (Pink/Purple) */
@@ -191,6 +201,8 @@ style.innerHTML = `
   --card-bg: rgba(244, 215, 231, 0.6);
   --accent: #a855f7;
   --request: #db2777;
+  --skeleton-bg: rgba(236, 72, 153, 0.1);
+  --skeleton-shimmer: rgba(236, 72, 153, 0.2);
 }
 
 /* Summer Theme (Yellow/Orange) */
@@ -207,6 +219,8 @@ style.innerHTML = `
   --card-bg: rgba(254, 215, 170, 0.4);
   --accent: #ea580c;
   --request: #9a3412;
+  --skeleton-bg: rgba(234, 88, 12, 0.1);
+  --skeleton-shimmer: rgba(234, 88, 12, 0.2);
 }
 
 /* Autumn Theme (Orange/Brown) */
@@ -223,6 +237,8 @@ style.innerHTML = `
   --card-bg: rgba(254, 215, 170, 0.6);
   --accent: #d97706;
   --request: #b45309;
+  --skeleton-bg: rgba(146, 64, 14, 0.1);
+  --skeleton-shimmer: rgba(146, 64, 14, 0.2);
 }
 
 /* Winter Theme (Blue/Cyan) */
@@ -239,6 +255,8 @@ style.innerHTML = `
   --card-bg: rgba(186, 230, 253, 0.4);
   --accent: #0284c7;
   --request: #0369a1;
+  --skeleton-bg: rgba(3, 105, 161, 0.1);
+  --skeleton-shimmer: rgba(3, 105, 161, 0.2);
 }
 
 #glassRoot {
@@ -377,10 +395,35 @@ style.innerHTML = `
 .req-status.pending { background: var(--warning); color: #000; }
 
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-.skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-color: transparent !important; }
-.skeleton-text { height: 12px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-bottom: 8px; }
+.skeleton { background: linear-gradient(90deg, var(--skeleton-bg) 25%, var(--skeleton-shimmer) 50%, var(--skeleton-bg) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-color: transparent !important; }
+.skeleton-text { height: 12px; background: var(--skeleton-shimmer); border-radius: 4px; margin-bottom: 8px; opacity: 0.8; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sweep { 0% { left: -100%; } 100% { left: 200%; } }
+@keyframes glow-pulse { 0% { box-shadow: 0 0 5px var(--primary-glow); } 50% { box-shadow: 0 0 15px var(--primary-glow); } 100% { box-shadow: 0 0 5px var(--primary-glow); } }
+
+/* V2.0 ADDITIONS */
+.btn-secondary { background: rgba(255,255,255,0.05); border: 1px solid var(--border-glass); color: #fff; padding: 6px 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 14px; }
+.btn-secondary:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); }
+
+.day.normal-work { animation: glow-pulse 3s infinite ease-in-out; }
+.day::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); transform: skewX(-25deg); transition: none; pointer-events: none; }
+.day:hover::after { animation: sweep 0.8s ease-in-out; }
+
+.stat-card { cursor: pointer; transition: all 0.3s; }
+.stat-card:hover { transform: scale(1.02); background: rgba(255,255,255,0.1); }
+.stat-card.active { border-color: var(--accent); background: rgba(59, 130, 246, 0.2); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+#calendar.highlight-mode .day:not(.highlighted) { opacity: 0.3; filter: grayscale(0.5) blur(1px); transform: scale(0.98); }
+
+.month-display { position: relative; cursor: pointer; padding: 6px 12px; border-radius: 8px; transition: background 0.2s; user-select: none; min-width: 140px; text-align: center; }
+.month-display:hover { background: rgba(255,255,255,0.1); }
+.month-picker-popup { position: absolute; top: 110%; left: 50%; transform: translateX(-50%); background: var(--bg-glass); backdrop-filter: blur(30px); border: 1px solid var(--border-glass); border-radius: 16px; padding: 16px; z-index: 1000; box-shadow: 0 20px 40px rgba(0,0,0,0.6); display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 260px; }
+.mp-year-nav { grid-column: span 3; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-glass); }
+.mp-month-btn { padding: 8px; border-radius: 8px; border: 1px solid transparent; background: rgba(255,255,255,0.03); color: var(--text-main); cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+.mp-month-btn:hover { background: var(--accent); color: #fff; }
+.mp-month-btn.active { background: var(--primary); color: #fff; }
+.mp-today-btn { grid-column: span 3; margin-top: 8px; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-glass); color: var(--text-main); font-weight: 700; cursor: pointer; }
+.mp-today-btn:hover { background: rgba(255,255,255,0.15); }
 `;
 document.head.appendChild(style);
 
@@ -403,6 +446,7 @@ const UTILS = {
       description: getVal("Description"),
       fromDate: getVal("RequestFromDate"),
       toDate: getVal("RequestToDate"),
+      date: getVal("Date"), // For DXBSQT
       dailyHours: getVal("DailyHours"),
       reason: getVal("Reason"),
       status: getVal("StatusName"),
@@ -473,10 +517,11 @@ async function fetchAttendance(monthStr) {
   const [y, m] = monthStr.split("-");
   const lastDay = new Date(y, m, 0).getDate();
   const body = new URLSearchParams({
-    page: 1, pageSize: 200, "args[0].Key": "ftype[]", "args[0].Value[0]": 5,
-    "args[1].Key": "dttype[]", "args[1].Value[0]": 9, "args[2].Key": "key[]", "args[2].Value[0]": "AbsentDate",
-    "args[3].Key": "value[]", "args[3].Value[0]": `01/${m}/${y}`, "args[3].Value[1]": `${lastDay}/${m}/${y}`,
-    "args[4].Key": "systemInfo[]", "args[4].Value[0]": "HRMF2260", "args[4].Value[1]": "HRM", "args[4].Value[2]": "HRMT2260"
+    page: 1, pageSize: 200,
+    "args[0].Key": "systemInfo[]", "args[0].Value[0]": "HRMF2260", "args[0].Value[1]": "HRM", "args[0].Value[2]": "HRMT2260",
+    "args[1].Key": "ftype[]", "args[1].Value[0]": 5,
+    "args[2].Key": "dttype[]", "args[2].Value[0]": 9, "args[3].Key": "key[]", "args[3].Value[0]": "AbsentDate",
+    "args[4].Key": "value[]", "args[4].Value[0]": `01/${m}/${y}`, "args[4].Value[1]": `${lastDay}/${m}/${y}`
   });
   try {
     const url = `${SERVER_CONFIG.serverHost}/GridCommon/Read?TableName=HRMT2260`;
@@ -508,18 +553,21 @@ async function fetchLeaveRequests(monthStr) {
   const [y, m] = monthStr.split("-");
   const lastDay = new Date(y, m, 0).getDate();
   const body = new URLSearchParams({
-    page: 1, pageSize: 100, "args[0].Key": "ftype[]", "args[0].Value[0]": 5,
-    "args[1].Key": "dttype[]", "args[1].Value[0]": 13, "args[2].Key": "key[]", "args[2].Value[0]": "CreateDate",
-    "args[3].Key": "value[]", "args[3].Value[0]": `01/${m}/${y}`, "args[3].Value[1]": `${lastDay}/${m}/${y}`,
-    "args[4].Key": "systemInfo[]", "args[4].Value[0]": "HRMF2360", "args[4].Value[1]": "HRM", "args[4].Value[2]": "OOT9000"
+    page: 1, pageSize: 100,
+    "args[0].Key": "systemInfo[]", "args[0].Value[0]": "HRMF2360", "args[0].Value[1]": "HRM", "args[0].Value[2]": "OOT9000",
+    "args[1].Key": "ftype[]", "args[1].Value[0]": 5,
+    "args[2].Key": "dttype[]", "args[2].Value[0]": 13, "args[3].Key": "key[]", "args[3].Value[0]": "CreateDate",
+    "args[4].Key": "value[]", "args[4].Value[0]": `01/${m}/${y}`, "args[4].Value[1]": `${lastDay}/${m}/${y}`
   });
   try {
-    const url = `${SERVER_CONFIG.serverHost}/GridCommon/Read?TableName=HRMT2260`;
+    const url = `${SERVER_CONFIG.serverHost}/GridCommon/Read?TableName=OOT9000`;
     const r = await fetch(url, {
       method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
     });
-    return r.json();
-  } catch (e) { return { Data: [] }; }
+    const json = await r.json();
+    console.log("[Leave Requests] Data:", json);
+    return json;
+  } catch (e) { console.error("[Leave Requests] Error:", e); return { Data: [] }; }
 }
 
 async function fetchRequestDetail(apk) {
@@ -533,6 +581,147 @@ async function fetchRequestDetail(apk) {
     return data;
   } catch (e) { return null; }
 }
+
+/* ========= CUSTOM DATE PICKER LOGIC ========= */
+function renderCustomDatePicker() {
+  const popup = document.getElementById("monthPickerPopup");
+  if (!popup) return;
+  const months = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"];
+  const [currY, currM] = SELECTED_MONTH.split("-").map(Number);
+
+  popup.innerHTML = `
+    <div class="mp-year-nav">
+      <button class="nav-btn" id="mpPrevYear">◀</button>
+      <span style="font-weight: 700; font-size: 16px;">${PICKER_YEAR}</span>
+      <button class="nav-btn" id="mpNextYear">▶</button>
+    </div>
+    ${months.map((m, i) => `
+      <button class="mp-month-btn ${PICKER_YEAR === currY && (i + 1) === currM ? 'active' : ''}" data-month="${i + 1}">
+        ${m}
+      </button>
+    `).join('')}
+    <button class="mp-today-btn" id="mpToday">Hôm nay</button>
+  `;
+
+  // Events for picker
+  document.getElementById("mpPrevYear").onclick = (e) => { e.stopPropagation(); PICKER_YEAR--; renderCustomDatePicker(); };
+  document.getElementById("mpNextYear").onclick = (e) => { e.stopPropagation(); PICKER_YEAR++; renderCustomDatePicker(); };
+  document.getElementById("mpToday").onclick = (e) => {
+    e.stopPropagation();
+    SELECTED_MONTH = formatMonth(new Date());
+    PICKER_YEAR = parseInt(SELECTED_MONTH.split("-")[0]);
+    popup.style.display = "none";
+    load();
+  };
+  popup.querySelectorAll(".mp-month-btn").forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const m = btn.dataset.month.padStart(2, '0');
+      SELECTED_MONTH = `${PICKER_YEAR}-${m}`;
+      popup.style.display = "none";
+      load();
+    };
+  });
+}
+
+const trigger = document.getElementById("monthDPTrigger");
+if (trigger) {
+  trigger.onclick = (e) => {
+    const popup = document.getElementById("monthPickerPopup");
+    const isOpen = popup.style.display === "grid";
+    popup.style.display = isOpen ? "none" : "grid";
+    if (!isOpen) {
+      PICKER_YEAR = parseInt(SELECTED_MONTH.split("-")[0]);
+      renderCustomDatePicker();
+    }
+    e.stopPropagation();
+  };
+}
+window.addEventListener('click', () => {
+  const popup = document.getElementById("monthPickerPopup");
+  if (popup) popup.style.display = "none";
+});
+
+/* ========= EXPORT CSV LOGIC ========= */
+function exportToCSV() {
+  const [y, m] = SELECTED_MONTH.split("-");
+  let csv = "\uFEFF"; // BOM for Excel UTF-8
+  csv += `Báo cáo chấm công tháng ${m}/${y}\n`;
+  csv += "Ngày,Thứ,Giờ vào,Giờ ra,Trạng thái,Đơn từ\n";
+
+  const daysInMonth = new Date(y, m, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(y, m - 1, d);
+    const weekdays = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+    const wd = weekdays[dateObj.getDay()];
+
+    const recs = currentData.map[d] || [];
+    const sorted = [...recs].sort();
+    const inTime = sorted[0] || "";
+    const outTime = sorted.length > 1 ? sorted[sorted.length - 1] : "";
+
+    let status = "";
+    if (recs.length === 0) {
+      status = currentData.shiftMap[d] ? "Nghỉ" : "";
+    } else if (recs.length === 1) {
+      status = "Quên chấm";
+    } else {
+      const isLate = UTILS.classify(inTime, true) === "late";
+      const isEarly = UTILS.classify(outTime, false) === "early";
+      status = (isLate ? "Muộn" : "") + (isLate && isEarly ? " & " : "") + (isEarly ? "Sớm" : "");
+      if (!status) status = "Đúng giờ";
+    }
+
+    const requests = (currentData.requestMap[d] || []).map(r => r.requestType).join("; ");
+    csv += `${d},${wd},${inTime},${outTime},${status},"${requests}"\n`;
+  }
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `ChamCong_${m}_${y}.csv`;
+  link.click();
+}
+document.getElementById("exportBtn").onclick = exportToCSV;
+
+/* ========= STATS HIGHLIGHT LOGIC ========= */
+function toggleStatHighlight(type) {
+  const cal = document.getElementById("calendar");
+  const cards = document.querySelectorAll('.stat-card');
+  let activeCard = null;
+  cards.forEach(c => { if (c.dataset.type === type) activeCard = c; });
+
+  if (activeCard.classList.contains('active')) {
+    cal.classList.remove('highlight-mode');
+    cards.forEach(c => c.classList.remove('active'));
+  } else {
+    cards.forEach(c => c.classList.remove('active'));
+    activeCard.classList.add('active');
+    cal.classList.add('highlight-mode');
+    // Apply highlighted class to days
+    document.querySelectorAll('.day').forEach(day => {
+      day.classList.remove('highlighted');
+      const d = parseInt(day.querySelector('.day-num')?.innerText);
+      if (!d) return;
+
+      const recs = currentData.map[d] || [];
+      const sorted = [...recs].sort();
+
+      let match = false;
+      if (type === 'work') match = recs.length > 0;
+      else if (type === 'late') match = recs.length > 1 && UTILS.classify(sorted[0], true) === 'late';
+      else if (type === 'early') match = recs.length > 1 && UTILS.classify(sorted[sorted.length - 1], false) === 'early';
+
+      if (match) day.classList.add('highlighted');
+    });
+  }
+}
+// Add data-types to stat cards
+document.querySelectorAll('.stat-card').forEach((card, idx) => {
+  const types = ['work', 'late', 'early'];
+  card.dataset.type = types[idx];
+  card.onclick = () => toggleStatHighlight(types[idx]);
+});
 
 /* ========= DATA PROCESSING ========= */
 let currentData = { map: {}, shiftMap: {}, requestMap: {}, stats: {} };
@@ -566,24 +755,32 @@ async function processData(attendanceData, shiftData, leaveData) {
     });
   }
 
-  if (leaveData.Data?.length > 0) {
-    const detailPromises = leaveData.Data.map(d => fetchRequestDetail(d.APK));
-    const details = await Promise.all(detailPromises);
+  console.log(`[Process] Found ${leaveData.Data.length} records, fetching details...`);
+  const details = await Promise.all(leaveData.Data.map(d => fetchRequestDetail(d.APK)));
 
-    details.filter(d => d).forEach(d => {
+  details.filter(d => d).forEach(d => {
+    console.log(`[Process] Leave Detail: ${d.requestType} from ${d.fromDate} to ${d.toDate} (Date: ${d.date})`);
+
+    let startDay, endDay;
+
+    if (d.fromDate !== "N/A") {
       const from = d.fromDate.split("/");
       const to = d.toDate.split("/");
-      if (from.length < 3) return;
+      startDay = parseInt(from[0]);
+      endDay = parseInt(to[0]);
+    } else if (d.date !== "N/A") {
+      // Handle format: "28/02/2026 08:00:00"
+      const dayPart = d.date.split(" ")[0];
+      startDay = endDay = parseInt(dayPart.split("/")[0]);
+    }
 
-      const startDay = parseInt(from[0]);
-      const endDay = parseInt(to[0]);
-
+    if (startDay && endDay) {
       for (let day = startDay; day <= endDay; day++) {
         if (!requestMap[day]) requestMap[day] = [];
         requestMap[day].push(d);
       }
-    });
-  }
+    }
+  });
 
   currentData = { map, shiftMap, requestMap, stats: { workDays: Object.keys(map).length, late, early } };
   return currentData;
@@ -594,11 +791,18 @@ function render(monthStr) {
   const cal = document.getElementById("calendar");
   if (!cal) return;
   cal.innerHTML = "";
+  cal.classList.remove('highlight-mode'); // Reset highlight on re-render
+
+  // Update Month Display text
+  const [y, m] = monthStr.split("-").map(Number);
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  document.getElementById("monthText").innerText = `${monthNames[m - 1]} ${y}`;
+
   document.getElementById("statWorkDays").innerText = stats.workDays;
   document.getElementById("statLate").innerText = stats.late;
   document.getElementById("statEarly").innerText = stats.early;
+  document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
 
-  const [y, m] = monthStr.split("-").map(Number);
   const firstDay = (new Date(y, m - 1, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(y, m, 0).getDate();
   const today = new Date();
@@ -623,8 +827,17 @@ function render(monthStr) {
     const requests = requestMap[d] || [];
     const hasPending = requests.some(r => r.status !== "Duyệt");
 
+    // Glow effect for normal on-time days
+    let isNormalOnTime = false;
+    if (hasFullData) {
+      const sorted = [...recs].sort();
+      const l = UTILS.classify(sorted[0], true);
+      const e = UTILS.classify(sorted[sorted.length - 1], false);
+      if (l === 'normal' && e === 'normal') isNormalOnTime = true;
+    }
+
     const cell = document.createElement("div");
-    cell.className = `day ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''} ${isAbsent ? 'absent' : ''} ${isForgot ? 'forgot' : ''} ${hasPending ? 'pending-req' : ''}`;
+    cell.className = `day ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''} ${isAbsent ? 'absent' : ''} ${isForgot ? 'forgot' : ''} ${hasPending ? 'pending-req' : ''} ${isNormalOnTime ? 'normal-work' : ''}`;
     cell.onclick = () => openModal(d, m, y, map[d], requests);
 
     let html = `<div class="day-num">${d}</div><div class="time-box">`;
@@ -645,10 +858,14 @@ function render(monthStr) {
 
     // Request Indicators
     if (requests.length > 0) {
-      requests.forEach(r => {
+      if (requests.length === 1) {
+        const r = requests[0];
         const isPending = r.status !== "Duyệt";
         html += `<div class="time-tag req ${isPending ? 'pending' : ''}">${isPending ? '⏳' : '✅'} ${r.requestType}</div>`;
-      });
+      } else {
+        const hasPending = requests.some(r => r.status !== "Duyệt");
+        html += `<div class="time-tag req ${hasPending ? 'pending' : ''}">📄 x${requests.length} Đơn từ</div>`;
+      }
     }
 
     cell.innerHTML = html + `</div>`;
@@ -755,10 +972,6 @@ const observer = new ResizeObserver(entries => {
 });
 observer.observe(root);
 
-/* ========= LOAD & EVENT ========= */
-const picker = document.getElementById("monthPicker");
-picker.value = new Date().toISOString().slice(0, 7);
-
 /* ========= LOADING & SKELETON ========= */
 function renderLoading() {
   const cal = document.getElementById("calendar");
@@ -787,22 +1000,22 @@ async function load() {
 
   try {
     // Step 1: Fetch period dates
-    const periodDates = await fetchPeriodDates(picker.value);
+    const periodDates = await fetchPeriodDates(SELECTED_MONTH);
 
     // Step 2: Update period
     if (periodDates) {
-      await fetchPeriodUpdate(picker.value, periodDates);
+      await fetchPeriodUpdate(SELECTED_MONTH, periodDates);
     }
 
     // Step 3: Fetch attendance and other data
     const [att, shift, leave] = await Promise.all([
-      fetchAttendance(picker.value),
-      fetchShift(picker.value),
-      fetchLeaveRequests(picker.value)
+      fetchAttendance(SELECTED_MONTH),
+      fetchShift(SELECTED_MONTH),
+      fetchLeaveRequests(SELECTED_MONTH)
     ]);
     console.log("Debug Data:", { att, shift, leave });
     await processData(att, shift, leave);
-    render(picker.value);
+    render(SELECTED_MONTH);
   } catch (err) {
     console.error("Load Error:", err);
   } finally {
@@ -812,12 +1025,22 @@ async function load() {
 }
 
 document.getElementById("loadBtn").onclick = load;
-document.getElementById("prevMonth").onclick = () => { const d = new Date(picker.value + "-01"); d.setMonth(d.getMonth() - 1); picker.value = d.toISOString().slice(0, 7); load(); };
-document.getElementById("nextMonth").onclick = () => { const d = new Date(picker.value + "-01"); d.setMonth(d.getMonth() + 1); picker.value = d.toISOString().slice(0, 7); load(); };
+document.getElementById("prevMonth").onclick = () => {
+  const [y, m] = SELECTED_MONTH.split("-").map(Number);
+  const d = new Date(y, m - 2, 1);
+  SELECTED_MONTH = formatMonth(d);
+  load();
+};
+document.getElementById("nextMonth").onclick = () => {
+  const [y, m] = SELECTED_MONTH.split("-").map(Number);
+  const d = new Date(y, m, 1);
+  SELECTED_MONTH = formatMonth(d);
+  load();
+};
 document.getElementById("closeBtn").onclick = () => app.remove();
 
 // Initialize: Load server config then load data
-(async () => {
-  await loadServerConfig();
-  load();
-})();
+loadServerConfig().then(() => {
+  SELECTED_MONTH = formatMonth(new Date());
+  load(); // Auto load on startup
+});
