@@ -1,354 +1,286 @@
-# Hướng dẫn Login → Logout ASP.NET bằng curl (Windows CMD)
+# 📅 Attendance Dashboard Extension
 
-## Mục tiêu
-
-Tài liệu này hướng dẫn mô phỏng **login → logout** của hệ thống ASP.NET thông qua `curl` trên **Windows CMD** dựa trên dữ liệu bắt được từ Wireshark.
+Một extension cho Microsoft Edge giúp quản lý và theo dõi chấm công một cách hiệu quả từ hệ thống ASP.NET HRM.
 
 ---
 
-# Tổng quan flow đăng nhập
+## ✨ Tính Năng Chính
 
-Hệ thống này gồm nhiều bước:
+### 📊 Quản Lý Chấm Công
+- **Lịch chấm công toàn tháng** trên một màn hình duy nhất
+- **Phân loại trạng thái tự động**:
+  - 🟢 **Đúng giờ**: Chấm công đầy đủ trong khung giờ (08:00 - 16:45)
+  - 🟡 **Đi trễ**: Vào sau 08:00
+  - 🔴 **Về sớm**: Ra trước 16:45
+  - ❓ **Quên chấm**: Chỉ có một bản ghi (in hoặc out)
+  - 🏠 **Nghỉ**: Có ca nhưng không chấm công
+  - 📋 **Có đơn**: Đơn xin phép/đi muộn/về sớm
 
-1. GET `/` → lấy `ASP.NET_SessionId`
-2. POST `/Login/GetDivisionByUser`
-3. POST `/Login/DoLogin`
-4. POST `/Login/DoCheckLoginExist`
-5. POST `/Login/DoLoginDivision`
-6. GET `/?logout=1` → Logout
+### 🎛️ Điều Khiển Giao Diện
+- **Zoom 50% - 200%** với lưu trữ tự động
+- **Kéo & Thay đổi kích thước** cửa sổ
+- **Lưu cấu hình**: Vị trí, kích thước, mức zoom được giữ lại
 
-👉 Phải thực hiện đúng thứ tự.
+### 📈 Thống Kê Nhanh
+- Tổng ngày công trong tháng
+- Tổng lần đi trễ
+- Tổng lần về sớm
+
+### 🗓️ Chuyển Đổi Kỳ Kế Toán
+- Chọn tháng xem
+- Tự động load dữ liệu chấm công, ca làm việc, đơn xin
+
+### 🎨 Giao Diện Hiện Đại
+- Glass Morphism design với hiệu ứng blur
+- Theme tối, dễ nhìn vào ban đêm
+- Responsive trên mọi kích thước màn hình
+- Loading animation với shimmer effect
 
 ---
 
-# Chuẩn bị
+## 🚀 Cài Đặt
 
-Xóa file cookie cũ nếu có:
+### Yêu Cầu
+- **Microsoft Edge** v90+ (hoặc Chromium-based browser)
+- Quyền truy cập hệ thống HRM tại `http://192.168.10.213:14444`
 
-```cmd
-del cookies.txt
+### Cài Đặt Thủ Công (Developer Mode)
+
+1. Mở Microsoft Edge → `edge://extensions`
+2. Bật **Developer mode** (góc dưới trái)
+3. Nhấp **Load unpacked**
+4. Chọn thư mục `attendance-extension/`
+5. Extension sẵn sàng sử dụng ✅
+
+---
+
+## 📁 Cấu Trúc Dự Án
+
 ```
-
----
-
-# Bước 0 — Lấy SessionId
-
-```cmd
-curl -c cookies.txt -s -o NUL "http://192.168.10.213:14444/"
-```
-
----
-
-# Bước 1 — GetDivisionByUser
-
-```cmd
-curl -s -b cookies.txt -c cookies.txt ^
-  -X POST "http://192.168.10.213:14444/Login/GetDivisionByUser" ^
-  -H "X-Requested-With: XMLHttpRequest" ^
-  -H "Content-Type: application/x-www-form-urlencoded" ^
-  -d "userID=000174&divisionID=MA"
-```
-
----
-
-# Bước 2 — DoLogin
-
-```cmd
-curl -s -b cookies.txt -c cookies.txt ^
-  -X POST "http://192.168.10.213:14444/Login/DoLogin" ^
-  -H "X-Requested-With: XMLHttpRequest" ^
-  -H "Content-Type: application/x-www-form-urlencoded" ^
-  --data-urlencode "logOutBack=FALSE" ^
-  --data-urlencode "infoDevide=Chrome - Windows 10" ^
-  --data-urlencode "UserID=000174" ^
-  --data-urlencode "Password=YOUR_PASSWORD" ^
-  --data-urlencode "LanguageID=vi-VN" ^
-  --data-urlencode "g-recaptcha-response=" ^
-  --data-urlencode "DeviceToken=" ^
-  --data-urlencode "DivisionID=MA" ^
-  --data-urlencode "DivisionName=MEIKO AUTOMATION JOINT STOCK COMPANY" ^
-  --data-urlencode "IsLoginQR=false"
-```
-
----
-
-# Bước 3 — Lấy SessionLocalID từ cookies.txt (Windows CMD)
-
-```cmd
-for /f "tokens=7" %i in ('findstr ASP.NET_SessionId cookies.txt') do set SESSION=%i
-```
-
-Kiểm tra:
-
-```cmd
-echo %SESSION%
+attendance-dashboard/
+├── attendance-extension/
+│   ├── manifest.json              # Cấu hình extension
+│   ├── content.js                 # Logic chính (661 dòng)
+│   ├── popup.html                 # Popup mặc định
+│   └── calendar.css               # Stylesheet tùy chọn
+├── .gitignore                     # Git ignore file
+├── README.md                      # Tài liệu này
+├── attendance-calendar.js         # Script cũ (tham khảo)
+└── [các file khác]
 ```
 
 ---
 
-# Bước 4 — DoCheckLoginExist
+## 🔌 API Integration
 
-```cmd
-curl -s -b cookies.txt -c cookies.txt ^
-  -X POST "http://192.168.10.213:14444/Login/DoCheckLoginExist" ^
-  -H "X-Requested-With: XMLHttpRequest" ^
-  -H "Content-Type: application/x-www-form-urlencoded" ^
-  --data-urlencode "logOutBack=False" ^
-  --data-urlencode "infoDevide=Chrome - Windows 10" ^
-  --data-urlencode "UserID=000174" ^
-  --data-urlencode "Password=YOUR_PASSWORD" ^
-  --data-urlencode "LanguageID=vi-VN" ^
-  --data-urlencode "g-recaptcha-response=" ^
-  --data-urlencode "SessionLocalID=%SESSION%"
+### 1️⃣ GET Period Boundaries
+```
+POST /Period/BeginEndDate
+```
+Lấy giới hạn kỳ kế toán hiện tại
+
+### 2️⃣ SET Period (Accounting Month)
+```
+POST /Period/Update
+Parameters:
+  - DivisionIDPeriod: "MA"
+  - Period: "03/2026"
+  - BeginDate: "01/03/2026" (DD/MM/YYYY)
+  - EndDate: "31/03/2026"   (DD/MM/YYYY)
+  - TranMonth: "03"
+  - TranYear: "2026"
+```
+
+### 3️⃣ Attendance Records
+```
+POST /GridCommon/Read?TableName=HRMT2260
+Filter by AbsentDate range
+```
+
+### 4️⃣ Shift Information
+```
+POST /GridCommon/ReadEdit?TableName=HRMT2323
+```
+
+### 5️⃣ Leave Requests
+```
+POST /GridCommon/Read?TableName=HRMT2260
+Filter by CreateDate
+```
+
+### 6️⃣ Request Details
+```
+GET /ViewMasterDetail2/Index/HRM/HRMF2362?PK={id}&Table=OOT9000
 ```
 
 ---
 
-# Bước 5 — DoLoginDivision
+## 🛠️ Công Nghệ
 
-```cmd
-curl -s -b cookies.txt -c cookies.txt ^
-  -X POST "http://192.168.10.213:14444/Login/DoLoginDivision" ^
-  -H "X-Requested-With: XMLHttpRequest" ^
-  -H "Content-Type: application/x-www-form-urlencoded" ^
-  -d "LogonDivisionID=MA&LogonDivisionName=MEIKO AUTOMATION JOINT STOCK COMPANY&UserID=000174&PortID=14444"
-```
-
-👉 Sau bước này login thành công.
+- **Vanilla JavaScript** - Không framework, không dependencies
+- **CSS3** - Glass Morphism, CSS Variables, Flexbox
+- **HTML5** - Semantic markup
+- **localStorage** - Persistent config storage
 
 ---
 
-# Bước 6 — Logout (2 bước giống browser)
+## ⚙️ Configuration
 
-## 6.1 Gọi POST /ContentMaster/Login
-
-```cmd
-curl -s -o NUL -b cookies.txt -c cookies.txt ^
-  -X POST "http://192.168.10.213:14444/ContentMaster/Login" ^
-  -H "X-Requested-With: XMLHttpRequest" ^
-  -H "Content-Type: application/x-www-form-urlencoded"
-```
-
-## 6.2 Gọi GET /?logout=1
-
-```cmd
-curl -s -o NUL -b cookies.txt -c cookies.txt ^
-  "http://192.168.10.213:14444/?logout=1&returnUrl=%2FS%2FSF0007&returnModule=S"
-```
-
----
-
-# Bước 7 — Verify Logout — Verify Logout
-
-```cmd
-curl -I -b cookies.txt ^
-  "http://192.168.10.213:14444/Contentmaster/Index/HRM/HRMF2260"
-```
-
-Nếu trả về:
-
-```
-HTTP/1.1 302 Found
-Location: /Login
-```
-
-=> Logout thành công.
-
----
-
-# Lưu ý quan trọng
-
-* Dùng `%SESSION%` trong CMD (không dùng `$SESSION`).
-* Trong file `.bat` phải dùng `%%i` thay vì `%i`.
-* Luôn giữ nguyên file `cookies.txt` xuyên suốt quá trình.
-
----
-
-# Flow chuẩn
-
-```
-Get Session → Multi-step Login → Logout → Verify
-```
-
----
-
-# Reverse Engineering Query Grid ASP.NET (Args Pattern)
-
-## Tổng quan
-
-Các API dạng:
-
-```
-/GridCommon/Read?TableName=XXXX
-```
-
-sử dụng **Generic Dynamic SQL Builder** để query dữ liệu cho toàn bộ grid trong hệ thống ERP.
-
----
-
-# Cấu trúc chuẩn của request
-
-Request luôn gồm 5 nhóm args:
-
-| Args    | Ý nghĩa           |
-| ------- | ----------------- |
-| args[0] | operator (ftype)  |
-| args[1] | datatype (dttype) |
-| args[2] | column name (key) |
-| args[3] | value (value)     |
-| args[4] | systemInfo        |
-
----
-
-# args[0] — Operator (ftype)
-
-| Code | SQL tương đương |
-| ---- | --------------- |
-| 1    | =               |
-| 2    | <>              |
-| 3    | IN              |
-| 4    | LIKE            |
-| 5    | BETWEEN         |
-
-Ví dụ:
-
-```
-CreateDate_Type_Fields = 5
-```
-
-→ SQL:
-
-```
-CreateDate BETWEEN x AND y
-```
-
----
-
-# args[1] — Data type (dttype)
-
-| Code | Kiểu dữ liệu |
-| ---- | ------------ |
-| 1    | GUID         |
-| 4    | INT          |
-| 5    | DECIMAL      |
-| 7    | NVARCHAR     |
-| 9    | DATE         |
-| 13   | DATETIME     |
-
-Ví dụ:
-
-```
-CreateDate_Content_DataType = 9
-```
-
-→ field dạng DATE.
-
----
-
-# args[2] — Column mapping
-
-Danh sách cột DB được filter.
-
-Backend sẽ loop:
-
-```csharp
-for(i=0;i<args.Length;i++)
-{
-   field = args[2][i];
-   type  = args[1][i];
-   op    = args[0][i];
-   value = args[3][i];
+### localStorage Key
+```json
+"asoft-attendance-config": {
+  "top": "100px",
+  "left": "100px",
+  "width": "1080px",
+  "height": "auto",
+  "zoom": 1
 }
 ```
 
-→ build WHERE động.
+### Time Constants
+- **Check-in threshold**: 08:00 (480 minutes)
+- **Check-out threshold**: 16:45 (1005 minutes)
 
----
-
-# args[3] — Filter value
-
-Giá trị người dùng nhập trên UI.
-
-Ví dụ:
-
-```
-args[3].Value[1] = 01/02/2026
-args[3].Value[2] = 28/02/2026
-```
-
-→ WHERE date range.
-
----
-
-# args[4] — Context hệ thống
-
-| Index | Ý nghĩa     |
-| ----- | ----------- |
-| 0     | ScreenID    |
-| 1     | Module      |
-| 2     | MasterTable |
-
-Ví dụ:
-
-```
-HRMF2260 = Screen
-HRM      = Module
-HRMT2260 = Table
-```
-
-Dùng để:
-
-* kiểm tra quyền
-* load cấu hình
-* xác định stored procedure
-
----
-
-# SQL thực tế được build
-
-Ví dụ query chấm công:
-
-```
-SELECT *
-FROM HRMT2260
-WHERE AbsentDate BETWEEN '2026-02-01' AND '2026-02-28'
-AND DivisionID LIKE '%MA%'
-AND DepartmentID IN (...)
-ORDER BY AbsentDate DESC
-OFFSET 0 ROWS FETCH NEXT 25 ROWS
+### CSS Variables
+```css
+--primary: #10b981        /* Green */
+--warning: #f59e0b        /* Yellow */
+--danger: #ef4444         /* Red */
+--request: #a855f7        /* Purple */
+--bg-glass: rgba(...)     /* Dark background */
 ```
 
 ---
 
-# Minimal Query có thể dùng
+## 📱 Responsive Breakpoints
 
-Chỉ cần giữ các phần bắt buộc:
-
-```
-page
-pageSize
-args[0]
-args[1]
-args[2]
-args[3]
-args[4]
-```
-
-👉 Có thể giảm request từ ~500 param xuống còn ~15 param.
+| Width | Behavior |
+|-------|----------|
+| < 650px | Ẩn sidebar stats |
+| < 950px | Compact mode |
+| ≥ 950px | Full layout |
 
 ---
 
-# Kết luận
+## 🔐 Security
 
-Đây là pattern phổ biến trong:
+- ✅ Header `X-Requested-With: XMLHttpRequest` trên tất cả request
+- ✅ Không lưu mật khẩu hoặc dữ liệu nhạy cảm
+- ✅ Chỉ gọi API nội bộ
+- ✅ HTTPS-ready (sử dụng khi server có SSL)
 
-* Kendo UI Grid
-* Telerik ASP.NET
-* DevExpress
-* Các hệ ERP ASP.NET
+---
 
-Flow chung:
+## 📊 manifest.json
 
+```json
+{
+  "manifest_version": 3,
+  "name": "Attendance Dashboard",
+  "description": "Quản lý chấm công từ hệ thống HRM",
+  "version": "1.0",
+  "permissions": ["storage"],
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
 ```
-UI Filter → args[] → Dynamic SQL → Database
+
+---
+
+## 📤 Chuẩn Bị Đẩy Lên Microsoft Edge Add-ons
+
+### Bước 1: Chuẩn Bị Tài Liệu
+- ✅ `.gitignore` - Hoàn thành
+- ✅ `README.md` - Hoàn thành (file này)
+- ✅ `manifest.json` - Phiên bản 3+
+- ⏳ Icon 128x128 (`icon-128.png`)
+- ⏳ Icon 48x48 (`icon-48.png`)
+- ⏳ Screenshot 1280x800 (khuyến cáo)
+
+### Bước 2: Tạo Package
+```bash
+# Nén thư mục extension
+zip -r attendance-dashboard-v1.0.zip attendance-extension/
 ```
+
+### Bước 3: Đăng Ký
+1. Truy cập [Partner Center](https://partner.microsoft.com)
+2. Đăng nhập hoặc tạo tài khoản
+3. Tạo Extension listing mới
+4. Upload `.zip` file
+5. Điền thông tin:
+   - Tên, mô tả (EN & VN)
+   - Ảnh chụp màn hình
+   - Danh mục (Productivity)
+   - Privacy policy
+6. Gửi review (3-7 ngày)
+
+### Bước 4: Xuất Bản
+- Sau khi được phê duyệt, extension sẽ xuất hiện trên [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons)
+
+---
+
+## 🐛 Debugging
+
+### Console Logs
+Mở DevTools: `F12` → Console tab
+
+Tìm logs từ extension:
+- "Calculated dates:" - Kiểm tra tính toán ngày
+- "Period Update Payload:" - Xem request body
+- "Period Update HTTP Status:" - Xem mã trạng thái
+- "Debug Data:" - Kiểm tra dữ liệu nhận được
+
+### Network Inspector
+- Tab **Network** để xem request/response
+- Lọc theo `/Period/Update` hoặc `/GridCommon/Read`
+- Kiểm tra status code (200 = OK, 500 = Error)
+
+---
+
+## 📞 Hỗ Trợ
+
+Nếu gặp lỗi:
+1. Kiểm tra console (F12)
+2. Xem Network tab để debug API
+3. Đảm bảo đã login vào hệ thống
+4. Thử refresh extension bằng `Ctrl+Shift+R`
+
+---
+
+## 📝 Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 02/03/2026 | Initial release |
+| 1.1 | TBD | Performance improvements |
+
+---
+
+## 📋 Checklist Trước Khi Đẩy Lên
+
+- [ ] `.gitignore` được tạo
+- [ ] `README.md` hoàn thành
+- [ ] `manifest.json` sử dụng v3
+- [ ] Không có console errors
+- [ ] Test trên Edge thực
+- [ ] `content.js` không có hardcoded debug logs
+- [ ] Icon assets được tạo (128x128, 48x48)
+- [ ] Screenshot chất lượng cao (1280x800)
+- [ ] Tất cả images có kích thước < 1MB
+
+---
+
+## 📜 License
+
+Copyright © 2026. All rights reserved.
+
+---
+
+**Made with ❤️ for HRM Efficiency**  
+Last updated: 02/03/2026
