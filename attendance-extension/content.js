@@ -3,8 +3,9 @@ document.getElementById("attendance-ext")?.remove();
 
 /* ========= STORAGE & CACHE ========= */
 const STORAGE_KEY = "asoft-attendance-config";
-const config = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"top":"100px","left":"100px","width":"1080px","height":"auto"}');
+const config = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"top":"100px","left":"100px","width":"1080px","height":"auto","zoom":1}');
 const DETAIL_CACHE = new Map();
+let currentZoom = config.zoom || 1;
 
 /* ========= MODERN UI & MODAL ========= */
 const app = document.createElement("div");
@@ -20,6 +21,11 @@ app.innerHTML = `
       </div>
     </div>
     <div class="actions">
+      <div class="zoom-controls">
+        <button id="zoomOut" title="Thu nhỏ">➖</button>
+        <span id="zoomLevel">100%</span>
+        <button id="zoomIn" title="Phóng to">➕</button>
+      </div>
       <button id="closeBtn" title="Đóng">✕</button>
     </div>
   </div>
@@ -115,6 +121,7 @@ style.innerHTML = `
   font-family: 'Inter', system-ui, sans-serif;
   display: flex; flex-direction: column;
   box-sizing: border-box;
+  transform-origin: top left;
 }
 
 .glass-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: move; user-select: none; }
@@ -124,6 +131,11 @@ style.innerHTML = `
 
 #closeBtn { background: rgba(255,255,255,0.05); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
 #closeBtn:hover { background: var(--danger); transform: rotate(90deg); }
+
+.zoom-controls { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border-glass); }
+.zoom-controls button { background: none; border: none; color: #fff; cursor: pointer; padding: 2px 6px; font-size: 14px; transition: opacity 0.2s; }
+.zoom-controls button:hover { opacity: 0.7; }
+#zoomLevel { font-size: 11px; font-weight: 700; color: var(--text-muted); min-width: 35px; text-align: center; }
 
 .dashboard-grid { display: grid; grid-template-columns: 200px 1fr; gap: 20px; flex: 1; overflow: hidden; }
 
@@ -256,6 +268,62 @@ const UTILS = {
     };
   }
 };
+
+async function fetchPeriodDates(monthStr) {
+  const [y, m] = monthStr.split("-");
+  const body = new URLSearchParams({ DivisionIDPeriod: "MA", TranMonth: m, TranYear: y });
+  try {
+    const r = await fetch("/Period/BeginEndDate", {
+      method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
+    });
+    return await r.json();
+  } catch (e) { console.error("fetchPeriodDates error:", e); return null; }
+}
+
+async function fetchPeriodUpdate(monthStr, periodData) {
+  const [y, m] = monthStr.split("-");
+  const today = new Date();
+  const voucherDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+  
+  // Calculate first and last day of month in DD/MM/YYYY format
+  const firstDay = new Date(parseInt(y), parseInt(m) - 1, 1);
+  const lastDay = new Date(parseInt(y), parseInt(m), 0);
+  const beginDateStr = `${String(firstDay.getDate()).padStart(2, '0')}/${String(firstDay.getMonth() + 1).padStart(2, '0')}/${firstDay.getFullYear()}`;
+  const endDateStr = `${String(lastDay.getDate()).padStart(2, '0')}/${String(lastDay.getMonth() + 1).padStart(2, '0')}/${lastDay.getFullYear()}`;
+  
+  console.log("Period Data received:", periodData);
+  console.log("Calculated dates:", { beginDate: firstDay, endDate: lastDay, beginDateStr, endDateStr });
+  
+  const body = new URLSearchParams({
+    IsNoReset: "",
+    periodTitle: "Chọn kỳ kế toán",
+    UrlUpdatePeriod: "/Period/Update",
+    DivisionIDPeriod: "MA",
+    Period: `${m.padStart(2, '0')}/${y}`,
+    VoucherDate: voucherDate,
+    BeginDate: beginDateStr,
+    EndDate: endDateStr,
+    TranMonth: m.padStart(2, '0'),
+    TranYear: y,
+    Closing: "0"
+  });
+  
+  console.log("Period Update Payload:", body.toString());
+  
+  try {
+    const r = await fetch("/Period/Update", {
+      method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
+    });
+    console.log("Period Update HTTP Status:", r.status);
+    const response = await r.text();
+    console.log("Period Update Response (raw):", response);
+    try {
+      return JSON.parse(response);
+    } catch {
+      return response;
+    }
+  } catch (e) { console.error("fetchPeriodUpdate error:", e); return null; }
+}
 
 async function fetchAttendance(monthStr) {
   const [y, m] = monthStr.split("-");
@@ -482,21 +550,46 @@ window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; 
 const root = document.getElementById("glassRoot");
 const header = document.getElementById("dragHeader");
 const resize = document.getElementById("resizeHandle");
-const saveConfig = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({ top: root.style.top, left: root.style.left, width: root.style.width, height: root.style.height }));
+const saveConfig = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({ top: root.style.top, left: root.style.left, width: root.style.width, height: root.style.height, zoom: currentZoom }));
+
+const applyZoom = (z) => {
+  currentZoom = Math.max(0.5, Math.min(z, 2.0));
+  root.style.transform = `scale(${currentZoom})`;
+  document.getElementById("zoomLevel").innerText = `${Math.round(currentZoom * 100)}%`;
+  saveConfig();
+};
+applyZoom(currentZoom);
+
+document.getElementById("zoomIn").onclick = () => applyZoom(currentZoom + 0.1);
+document.getElementById("zoomOut").onclick = () => applyZoom(currentZoom - 0.1);
 
 header.onmousedown = (e) => {
+  if (e.target.closest('.zoom-controls')) return;
   let sX = e.clientX, sY = e.clientY, iX = root.offsetLeft, iY = root.offsetTop;
   document.onmousemove = (e) => {
-    let nX = Math.max(0, Math.min(iX + e.clientX - sX, window.innerWidth - root.offsetWidth));
-    let nY = Math.max(0, Math.min(iY + e.clientY - sY, window.innerHeight - root.offsetHeight));
-    root.style.left = `${nX}px`; root.style.top = `${nY}px`;
+    let nX = iX + (e.clientX - sX);
+    let nY = iY + (e.clientY - sY);
+
+    // Safe margin so it's never completely stuck
+    const margin = 20;
+    const maxLeft = window.innerWidth - (root.offsetWidth * currentZoom) + (margin * currentZoom);
+    const maxTop = window.innerHeight - (root.offsetHeight * currentZoom) + (margin * currentZoom);
+
+    root.style.left = `${Math.max(-margin, Math.min(nX, maxLeft))}px`;
+    root.style.top = `${Math.max(-margin, Math.min(nY, maxTop))}px`;
   };
   document.onmouseup = () => { document.onmousemove = null; saveConfig(); };
 };
 
 resize.onmousedown = (e) => {
   let sX = e.clientX, sY = e.clientY, iW = root.clientWidth, iH = root.clientHeight;
-  document.onmousemove = (e) => { root.style.width = `${iW + e.clientX - sX}px`; root.style.height = `${iH + e.clientY - sY}px`; };
+  document.onmousemove = (e) => {
+    // When zoomed, the delta must be divided by the zoom factor
+    let newW = iW + (e.clientX - sX) / currentZoom;
+    let newH = iH + (e.clientY - sY) / currentZoom;
+    root.style.width = `${Math.max(480, newW)}px`;
+    root.style.height = `${Math.max(300, newH)}px`;
+  };
   document.onmouseup = () => { document.onmousemove = null; saveConfig(); };
   e.stopPropagation(); e.preventDefault();
 };
@@ -535,11 +628,21 @@ function renderLoading() {
 async function load() {
   const btn = document.getElementById("loadBtn");
   if (!btn) return;
-  btn.style.opacity = "0.5"; btn.innerText = "Đang tải...";
+  btn.style.opacity = "0.5";
+  btn.innerHTML = '<span class="icon">⏳</span> Đang tải...';
 
-  renderLoading(); // Hiển thị trạng thái chờ
+  renderLoading();
 
   try {
+    // Step 1: Fetch period dates
+    const periodDates = await fetchPeriodDates(picker.value);
+    
+    // Step 2: Update period
+    if (periodDates) {
+      await fetchPeriodUpdate(picker.value, periodDates);
+    }
+
+    // Step 3: Fetch attendance and other data
     const [att, shift, leave] = await Promise.all([
       fetchAttendance(picker.value),
       fetchShift(picker.value),
@@ -551,7 +654,8 @@ async function load() {
   } catch (err) {
     console.error("Load Error:", err);
   } finally {
-    btn.style.opacity = "1"; btn.innerHTML = '<span class="icon">🔄</span> Cập nhật';
+    btn.style.opacity = "1";
+    btn.innerHTML = '<span class="icon">🔄</span> Cập nhật';
   }
 }
 
