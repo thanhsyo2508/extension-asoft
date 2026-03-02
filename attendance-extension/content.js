@@ -25,15 +25,24 @@ async function loadServerConfig() {
 function applyTheme(themeName) {
   const root = document.getElementById('glassRoot');
   if (!root) return;
-  
+
   // Remove all theme classes
   root.classList.remove('theme-dark', 'theme-light', 'theme-spring', 'theme-summer', 'theme-autumn', 'theme-winter');
-  
+
   // Add the selected theme class (skip dark as it's default)
   if (themeName !== 'dark') {
     root.classList.add(`theme-${themeName}`);
   }
-  
+
+  // Update active state in UI
+  document.querySelectorAll('.theme-selector button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === themeName);
+  });
+
+  // Save to config and sync
+  SERVER_CONFIG.theme = themeName;
+  chrome.storage.sync.set({ 'asoft-server-config': SERVER_CONFIG });
+
   console.log(`[Attendance Dashboard] Theme applied: ${themeName}`);
 }
 
@@ -57,6 +66,14 @@ app.innerHTML = `
       </div>
     </div>
     <div class="actions">
+      <div class="theme-selector">
+        <button data-theme="dark" title="Dark" style="background: #0f172a"></button>
+        <button data-theme="light" title="Light" style="background: #f8fafc"></button>
+        <button data-theme="spring" title="Spring" style="background: #fce7f3"></button>
+        <button data-theme="summer" title="Summer" style="background: #fefce8"></button>
+        <button data-theme="autumn" title="Autumn" style="background: #fef2f2"></button>
+        <button data-theme="winter" title="Winter" style="background: #f0f9ff"></button>
+      </div>
       <div class="zoom-controls">
         <button id="zoomOut" title="Thu nhỏ">➖</button>
         <span id="zoomLevel">100%</span>
@@ -182,14 +199,14 @@ style.innerHTML = `
   --border-glass: rgba(217, 119, 6, 0.2);
   --primary: #ea580c;
   --primary-glow: rgba(234, 88, 12, 0.3);
-  --warning: #d97706;
-  --danger: #f97316;
-  --forgot: #fb923c;
-  --text-main: #4c1d95;
-  --text-muted: #d97706;
-  --card-bg: rgba(254, 215, 170, 0.6);
-  --accent: #f59e0b;
-  --request: #ea580c;
+  --warning: #9a3412;
+  --danger: #9a3412;
+  --forgot: #ea580c;
+  --text-main: #431407;
+  --text-muted: #9a3412;
+  --card-bg: rgba(254, 215, 170, 0.4);
+  --accent: #ea580c;
+  --request: #9a3412;
 }
 
 /* Autumn Theme (Orange/Brown) */
@@ -210,18 +227,18 @@ style.innerHTML = `
 
 /* Winter Theme (Blue/Cyan) */
 #glassRoot.theme-winter {
-  --bg-glass: rgba(240, 249, 255, 0.95);
+  --bg-glass: rgba(240, 249, 255, 0.96);
   --border-glass: rgba(3, 169, 244, 0.2);
   --primary: #0369a1;
   --primary-glow: rgba(3, 105, 161, 0.3);
-  --warning: #0284c7;
-  --danger: #0ea5e9;
-  --forgot: #06b6d4;
-  --text-main: #003d82;
+  --warning: #0369a1;
+  --danger: #0369a1;
+  --forgot: #0369a1;
+  --text-main: #0c4a6e;
   --text-muted: #0369a1;
-  --card-bg: rgba(207, 250, 254, 0.6);
-  --accent: #06b6d4;
-  --request: #0284c7;
+  --card-bg: rgba(186, 230, 253, 0.4);
+  --accent: #0284c7;
+  --request: #0369a1;
 }
 
 #glassRoot {
@@ -240,19 +257,26 @@ style.innerHTML = `
   box-sizing: border-box;
   transform-origin: top left;
 }
-
+.actions { display: flex; align-items: center; gap: 12px; }
 .glass-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: move; user-select: none; }
 .brand { display: flex; gap: 12px; align-items: center; pointer-events: none; }
 .brand h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
 .icon-box { width: 40px; height: 40px; background: var(--primary-glow); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
 
-#closeBtn { background: rgba(255,255,255,0.05); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+#closeBtn { background: rgba(255,255,255,0.2); border: none; color: #ff0000; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
 #closeBtn:hover { background: var(--danger); transform: rotate(90deg); }
 
-.zoom-controls { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border-glass); }
-.zoom-controls button { background: none; border: none; color: #fff; cursor: pointer; padding: 2px 6px; font-size: 14px; transition: opacity 0.2s; }
+.zoom-controls { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border-glass); }
+#glassRoot[class*="theme-"] .zoom-controls { background: rgba(0,0,0,0.05); }
+.zoom-controls button { background: none; border: none; color: var(--text-main); cursor: pointer; padding: 2px 6px; font-size: 14px; transition: opacity 0.2s; }
 .zoom-controls button:hover { opacity: 0.7; }
 #zoomLevel { font-size: 11px; font-weight: 700; color: var(--text-muted); min-width: 35px; text-align: center; }
+
+.theme-selector { display: flex; gap: 6px; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border-glass); }
+#glassRoot[class*="theme-"] .theme-selector { background: rgba(0,0,0,0.05); }
+.theme-selector button { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: transform 0.2s; }
+.theme-selector button:hover { transform: scale(1.2); }
+.theme-selector button.active { border: 2px solid var(--primary); transform: scale(1.2); }
 
 .dashboard-grid { display: grid; grid-template-columns: 200px 1fr; gap: 20px; flex: 1; overflow: hidden; }
 
@@ -279,8 +303,9 @@ style.innerHTML = `
 
 .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: var(--card-bg); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border-glass); }
 .month-nav { display: flex; align-items: center; gap: 10px; }
-.nav-btn { background: rgba(255,255,255,0.05); border: none; color: #fff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; }
-#monthPicker { background: transparent; border: none; color: #fff; font-weight: 600; font-size: 14px; outline: none; }
+.nav-btn { background: rgba(255,255,255,0.1); border: none; color: var(--text-main); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; }
+#glassRoot[class*="theme-"] .nav-btn { background: rgba(0,0,0,0.05); }
+#monthPicker { background: transparent; border: none; color: var(--text-main); font-weight: 700; font-size: 15px; outline: none; cursor: pointer; }
 .btn-primary { background: var(--primary); color: #fff; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; }
 
 .weekday { text-align: center; padding: 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); }
@@ -402,16 +427,16 @@ async function fetchPeriodUpdate(monthStr, periodData) {
   const [y, m] = monthStr.split("-");
   const today = new Date();
   const voucherDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-  
+
   // Calculate first and last day of month in DD/MM/YYYY format
   const firstDay = new Date(parseInt(y), parseInt(m) - 1, 1);
   const lastDay = new Date(parseInt(y), parseInt(m), 0);
   const beginDateStr = `${String(firstDay.getDate()).padStart(2, '0')}/${String(firstDay.getMonth() + 1).padStart(2, '0')}/${firstDay.getFullYear()}`;
   const endDateStr = `${String(lastDay.getDate()).padStart(2, '0')}/${String(lastDay.getMonth() + 1).padStart(2, '0')}/${lastDay.getFullYear()}`;
-  
+
   console.log("Period Data received:", periodData);
   console.log("Calculated dates:", { beginDate: firstDay, endDate: lastDay, beginDateStr, endDateStr });
-  
+
   const body = new URLSearchParams({
     IsNoReset: "",
     periodTitle: "Chọn kỳ kế toán",
@@ -425,9 +450,9 @@ async function fetchPeriodUpdate(monthStr, periodData) {
     TranYear: y,
     Closing: "0"
   });
-  
+
   console.log("Period Update Payload:", body.toString());
-  
+
   try {
     const url = `${SERVER_CONFIG.serverHost}/Period/Update`;
     const r = await fetch(url, {
@@ -685,6 +710,11 @@ applyZoom(currentZoom);
 document.getElementById("zoomIn").onclick = () => applyZoom(currentZoom + 0.1);
 document.getElementById("zoomOut").onclick = () => applyZoom(currentZoom - 0.1);
 
+// Theme Selection
+document.querySelectorAll('.theme-selector button').forEach(btn => {
+  btn.onclick = () => applyTheme(btn.dataset.theme);
+});
+
 header.onmousedown = (e) => {
   if (e.target.closest('.zoom-controls')) return;
   let sX = e.clientX, sY = e.clientY, iX = root.offsetLeft, iY = root.offsetTop;
@@ -758,7 +788,7 @@ async function load() {
   try {
     // Step 1: Fetch period dates
     const periodDates = await fetchPeriodDates(picker.value);
-    
+
     // Step 2: Update period
     if (periodDates) {
       await fetchPeriodUpdate(picker.value, periodDates);
