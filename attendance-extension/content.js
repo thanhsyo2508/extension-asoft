@@ -128,6 +128,7 @@ app.innerHTML = `
         <div class="legend-item"><span class="dot forgot"></span> Quên chấm</div>
         <div class="legend-item"><span class="dot absent"></span> Nghỉ</div>
         <div class="legend-item"><span class="dot request"></span> Có đơn</div>
+        <div class="legend-item"><span class="dot ot"></span> Làm thêm (OT)</div>
       </div>
     </div>
   </div>
@@ -336,7 +337,10 @@ style.innerHTML = `
   cursor: pointer;
 }
 .day:hover { transform: translateY(-3px); border-color: var(--accent); background: rgba(255,255,255,0.08); }
-.day.weekend { background: rgba(15, 23, 42, 0.4); }
+.day.off-day { background: rgba(15, 23, 42, 0.4); opacity: 0.8; }
+.day.ot-day { border: 2px solid #8b5cf6; background: rgba(139, 92, 246, 0.15); opacity: 1 !important; }
+/* Đảm bảo text trong ngày nghỉ vẫn dễ đọc */
+.day.off-day .day-num { color: var(--text-muted); }
 .day.today { border: 2px solid var(--accent); }
 .day.empty { opacity: 0.1; pointer-events: none; }
 
@@ -365,6 +369,7 @@ style.innerHTML = `
 .dot.forgot { background: var(--forgot); }
 .dot.absent { background: #a855f7; }
 .dot.request { background: var(--request); border: 1px solid #fff; }
+.dot.ot { background: #8b5cf6; }
 
 .resize-handle { position: absolute; bottom: 0; right: 0; width: 20px; height: 20px; background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.2) 50%); border-radius: 0 0 20px 0; cursor: nwse-resize; }
 
@@ -478,8 +483,8 @@ async function fetchPeriodUpdate(monthStr, periodData) {
   const beginDateStr = `${String(firstDay.getDate()).padStart(2, '0')}/${String(firstDay.getMonth() + 1).padStart(2, '0')}/${firstDay.getFullYear()}`;
   const endDateStr = `${String(lastDay.getDate()).padStart(2, '0')}/${String(lastDay.getMonth() + 1).padStart(2, '0')}/${lastDay.getFullYear()}`;
 
-  console.log("Period Data received:", periodData);
-  console.log("Calculated dates:", { beginDate: firstDay, endDate: lastDay, beginDateStr, endDateStr });
+  // console.log("Period Data received:", periodData);
+  // console.log("Calculated dates:", { beginDate: firstDay, endDate: lastDay, beginDateStr, endDateStr });
 
   const body = new URLSearchParams({
     IsNoReset: "",
@@ -495,16 +500,16 @@ async function fetchPeriodUpdate(monthStr, periodData) {
     Closing: "0"
   });
 
-  console.log("Period Update Payload:", body.toString());
+  // console.log("Period Update Payload:", body.toString());
 
   try {
     const url = `${SERVER_CONFIG.serverHost}/Period/Update`;
     const r = await fetch(url, {
       method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
     });
-    console.log("Period Update HTTP Status:", r.status);
+    // console.log("Period Update HTTP Status:", r.status);
     const response = await r.text();
-    console.log("Period Update Response (raw):", response);
+    // console.log("Period Update Response (raw):", response);
     try {
       return JSON.parse(response);
     } catch {
@@ -565,7 +570,7 @@ async function fetchLeaveRequests(monthStr) {
       method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
     });
     const json = await r.json();
-    console.log("[Leave Requests] Data:", json);
+    // console.log("[Leave Requests] Data:", json);
     return json;
   } catch (e) { console.error("[Leave Requests] Error:", e); return { Data: [] }; }
 }
@@ -755,11 +760,11 @@ async function processData(attendanceData, shiftData, leaveData) {
     });
   }
 
-  console.log(`[Process] Found ${leaveData.Data.length} records, fetching details...`);
+  // console.log(`[Process] Found ${leaveData.Data.length} records, fetching details...`);
   const details = await Promise.all(leaveData.Data.map(d => fetchRequestDetail(d.APK)));
 
   details.filter(d => d).forEach(d => {
-    console.log(`[Process] Leave Detail: ${d.requestType} from ${d.fromDate} to ${d.toDate} (Date: ${d.date})`);
+    // console.log(`[Process] Leave Detail: ${d.requestType} from ${d.fromDate} to ${d.toDate} (Date: ${d.date})`);
 
     let startDay, endDay;
 
@@ -837,7 +842,10 @@ function render(monthStr) {
     }
 
     const cell = document.createElement("div");
-    cell.className = `day ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''} ${isAbsent ? 'absent' : ''} ${isForgot ? 'forgot' : ''} ${hasPending ? 'pending-req' : ''} ${isNormalOnTime ? 'normal-work' : ''}`;
+    const isOTDay = !hasShift && hasData;
+    // Sử dụng !hasShift để xác định ngày nghỉ (Off-day)
+    cell.className = `day ${!hasShift ? 'off-day' : ''} ${isOTDay ? 'ot-day' : ''} ${isToday ? 'today' : ''} ${isAbsent ? 'absent' : ''} ${isForgot ? 'forgot' : ''} ${hasPending ? 'pending-req' : ''} ${isNormalOnTime ? 'normal-work' : ''}`;
+    if (isWeekend) cell.classList.add('weekend-date'); // Thêm class để track weekend nếu cần
     cell.onclick = () => openModal(d, m, y, map[d], requests);
 
     let html = `<div class="day-num">${d}</div><div class="time-box">`;
