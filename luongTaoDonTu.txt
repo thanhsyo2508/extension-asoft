@@ -1,0 +1,196 @@
+
+http://192.168.10.213:14444/PopupMasterDetail/Index/HRM/HRMF2361 -> hiện ra trang tạo đơn mặc định của Asoft
+
+http://192.168.10.213:14444/HRM/OOF9000/LoadKeyByRequestTypeID -> lấy key của đơn
+table=HRMT2360M032026&type=DXP&id=DXP%2F03%2F26%2F0006
+
+table=HRMT2360M032026&type=DXLTG&id=DXP%2F03%2F26%2F0009
+
+table=HRMT2360M032026&type=DXBSQT&id=DOT%2F03%2F26%2F0012
+
+table=HRMT2360M032026&type=DXDC&id=DQT%2F03%2F26%2F0001
+
+table=HRMT2360M032026&type=DXRN&id=DXP%2F03%2F26%2F0009
+
+return {
+    "ID": "DXP/03/26/0006",
+    "LastKey": "5",
+    "LastKeyAPK": "2E3976CA-35B7-44C6-9C1E-D72E73ADD466"
+}
+
+http://192.168.10.213:14444/HRM/HRMF2360/GetShiftNow
+{
+    "EmployeeID": "000174",
+    "WorkDate": "02/03/2026"
+}
+
+return "CA01-08:00"
+
+http://192.168.10.213:14444/HRM/HRMF2000/CheckStatusApprove -> 
+{"pVoucherID":""}
+return true/false
+
+http://192.168.10.213:14444/HRM/OOF9000/LoadDataComboApprovePerson -> lấy người duyệt
+[{"key":"Name","value":"ApprovePerson01ID"},{"key":"DepartmentID","value":"RNDS"},{"key":"SectionID","value":""},{"key":"SubsectionID","value":""},{"key":"ProcessID","value":""},{"key":"Type","value":"DXP"},{"key":"Num","value":2},{"key":"ApprovePersonID","value":[]}]
+return 
+[
+    {
+        "EmployeeID": "000001",
+        "FullName": "Nguyễn Văn Thuận",
+        "ApproveID": "000001",
+        "LevelNo": "1"
+    },
+    {
+        "EmployeeID": "000002",
+        "FullName": "Nguyễn Minh Tiến",
+        "ApproveID": "000002",
+        "LevelNo": "1"
+    },
+    {
+        "EmployeeID": "000004",
+        "FullName": "Nguyễn Minh",
+        "ApproveID": "000004",
+        "LevelNo": "1"
+    },
+    {
+        "Num": "2"
+    }
+]
+
+>>>>>>>>>>>>> Sau khi nhập các thông tin đơn, ta gửi các thông tin đơn qua
+
+
+POST http://192.168.10.213:14444/HRM/HRMF2360/GetMaxRequest
+{
+    "requestTypeID": "DXP"
+}
+
+return 
+
+
+
+POST http://192.168.10.213:14444/HRM/HRMF2360/CountCurrentRequest
+{
+    "RequestTypeID": "DXP",
+    "data": [
+        {
+            "EmployeeID": "000174",
+            "RequestFromDate": "2026-03-03 00:00:00",
+            "AbsentTypeID": null
+        }
+    ],
+    "ApplicationID": "DXP/03/26/0006"
+}
+
+{
+    "MaxRequest": -1,
+    "MaxOverRequest": -1,
+    "MaxRequestDXPHasCompen": 7,
+    "MaxHoursDXPHasCompen": 2,
+    "AbsentTypeID": "BN"
+}
+
+return {
+    "isChecked": true,
+    "data": [
+        {
+            "EmployeeID": "000174",
+            "TotalRequest": 0,
+            "CurrentRequest": 0
+        }
+    ]
+}
+
+
+POST http://192.168.10.213:14444/HRM/HRMF2360/CheckShiftFormat
+[
+    {
+        "APK": "FDE99803-8F83-4195-1780-FBDB9BED3504",
+        "APKMaster": "",
+        "EmployeeID": "000174",
+        "ShiftID": "CA01-08:00",
+        "RequestFromDate": "2026-03-03 00:00:00",
+        "RequestToDate": "2026-03-03 00:00:00",
+        "RequestTypeID": "DXP",
+        "AbsentTypeID": "NP"
+    }
+]
+
+{
+    "isChecked": false,
+    "list": []
+}
+
+
+POST http://192.168.10.213:14444/HRM/HRMF2360/CheckAllDataChange
+[
+    {
+        "APK": "FDE99803-8F83-4195-1780-FBDB9BED3504",
+        "APKMaster": "",
+        "EmployeeID": "000174",
+        "ShiftID": "CA01-08:00",
+        "RequestFromDate": "2026-03-03 00:00:00",
+        "RequestToDate": "2026-03-03 00:00:00",
+        "RequestTypeID": "DXP",
+        "AbsentTypeID": "NP"
+    }
+]
+
+return {
+    "isChecked": false,
+    "list": []
+}
+
+POST http://192.168.10.213:14444/HRM/HRMF2360/CheckTimeStatus
+[
+    {
+        "APK": "FDE99803-8F83-4195-1780-FBDB9BED3504",
+        "APKMaster": "",
+        "EmployeeID": "000174",
+        "ShiftID": "CA01-08:00",
+        "RequestFromDate": "2026-03-03 00:00:00",
+        "RequestToDate": "2026-03-03 00:00:00",
+        "RequestTypeID": "DXP",
+        "AbsentTypeID": "NP"
+    }
+]
+
+return {
+    "isChecked": false,
+    "list": []
+}
+
+http://192.168.10.213:14444/HRM/HRMF2360/CheckIsAnnualLeave
+AbsentTypeID=NP
+return{
+    "IsAnnualLeave": true
+}
+
+http://192.168.10.213:14444/HRM/HRMF2360/GetRemainingLeave
+EmployeeID=000174
+
+
+POST http://192.168.10.213:14444/HRM/HRMF2360/GetDataBorrowLeave
+return {
+    "MaxBorrowLeaveYear": 3,
+    "MonthAllowBorrowLeave": "1,2,3,4,5,6,7,8,9,10,11"
+}
+
+POST http://192.168.10.213:14444/GridCommon/InsertUpdatePopupMasterDetailV2/HRM/HRMF2361?isUpdate=false
+{"dataScreen":[[{"RequestTypeID":"7,DXP","ApplicationID":"7,DXP/03/26/0006","AbsentTypeID":"7,NP","Description":"12,Đơn xin phép","DepartmentID":"7,RNDS","SectionID":"7,","SubsectionID":"7,","ProcessID":"7,","EmployeeName":"7,Nguyễn Văn Thanh","RequestFromDate":"9,03/03/2026","RequestFromDate_DT":"13,","RequestToDate":"9,03/03/2026","RequestToDate_DT":"13,","DailyHours":"8,8","TotalTime":"8,8.00","OverTime":"8,0.00","OverTimeNN":"8,0.00","OverTimeCompany":"8,0.00","ShiftNow":"9,","ShiftID":"9,CA01-08:00","Reason":"7,","Date":"13,","InOutID":"7,","Place":"7,","Note":"7,","DaysRemained":"8,2.0","OTDaysRemained":"8,0.0","UseVehicle":"7,","APK":"1,","APKDetail":"1,","FromToDate":"9,","DivisionID":"7,","DepartmentName":"7,R&D S","SectionName":"7,","SubsectionName":"7,","ProcessName":"7,","EmployeeID":"7,000174","CreateUserID":"7,","CreateDate":"9,","LastModifyUserID":"7,","LastModifyDate":"9,","LastKey":"7,5","LastKeyAPK":"7,2E3976CA-35B7-44C6-9C1E-D72E73ADD466","FormStatus":"7,AddNew","Level":"7,","TypeName":"7,DXP","ApproveLevel":"7,1","ApprovingLevel":"7,","Type_9000":"7,","GoStraightName":"7,","ComeStraightName":"7,","AbsentTypeName":"7,","ShiftName":"9,","IsPreShiftOTName":"7,","InOut":"7,","AskForVehicleName":"7,","UseVehicleName":"7,","HaveLunchName":"7,","IsOnTripOTName":"7,","StatusName":"7,","Status":"6,0","ApprovalNotes":"7,","Day":"0,200","ApprovePerson01ID":"7,000018","IsSeri":"6,0","GoStraight":"6,0","ComeStraight":"6,0","IsPreShiftOT":"6,0","AskForVehicle":"6,0","HaveLunch":"6,0","IsOnTripOT":"6,0","IsCompen":"6,0"}]],"voucherPackages":[]}
+
+return {
+    "Params": null,
+    "MessageID": "00ML000015",
+    "Status": 0,
+    "Message": "00ML000015",
+    "Data": "ea1770a1-821e-4a31-b649-65c00ac068d1",
+    "UpdateSuccess": null,
+    "VoucherPackages": []
+}
+
+
+http://192.168.10.213:14444/GridCommon/DeleteBussiness/HRM/HRMF2360
+dt=d42f253d-37e6-448f-a256-9c399a5b5790%2CMA&cl=OOT9000&cl=APK
+
+return []

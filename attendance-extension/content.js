@@ -139,11 +139,83 @@ app.innerHTML = `
 <div id="detailModal" class="modal-overlay" style="display: none;">
   <div class="modal-content">
     <div class="modal-header">
-      <h2 id="modalTitle">Chi tiết ngày 01/01/2026</h2>
+      <div class="modal-header-title">
+        <h2 id="modalTitle">Chi tiết ngày 01/01/2026</h2>
+        <button id="openCreateFormBtn" class="btn-secondary" style="padding: 4px 8px; font-size: 12px;" title="Tạo đơn mới cho ngày này">
+          <span class="icon">➕</span> Đơn mới
+        </button>
+      </div>
       <button id="closeModal">✕</button>
     </div>
     <div id="modalBody" class="modal-body">
       <!-- Content injected here -->
+    </div>
+  </div>
+</div>
+
+<!-- CREATE REQUEST MODAL -->
+<div id="createRequestModal" class="modal-overlay" style="display: none; z-index: 1000001;">
+  <div class="modal-content" style="width: 550px;">
+    <div class="modal-header">
+      <div class="modal-header-title">
+        <h2 id="createModalTitle">Tạo đơn mới</h2>
+      </div>
+      <button id="closeCreateModal">✕</button>
+    </div>
+    <div class="modal-body" style="max-height: 550px;">
+      <div class="form-row-req">
+        <div class="form-group" style="flex: 2;">
+          <label class="req-label">Loại đơn</label>
+          <select id="requestTypeSelect" class="form-control">
+            <option value="DXNP">Đơn xin nghỉ phép (DXNP)</option>
+            <option value="DXLTG">Đơn xin làm thêm giờ (DXLTG)</option>
+            <option value="DXBSQT">Đơn xin bổ sung quẹt thẻ (DXBSQT)</option>
+            <option value="DXRN">Đơn xin ra ngoài (DXRN)</option>
+            <option value="DXDC">Đơn xin đổi ca (DXDC)</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex: 1; display: flex; align-items: flex-end; padding-bottom: 8px;">
+          <label class="asf-checkbox-label">
+            <input type="checkbox" id="isSeri"> Hàng loạt
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="req-label">Diễn giải (Tóm tắt)</label>
+        <input type="text" id="requestDescription" class="form-control" placeholder="Ví dụ: Nghỉ phép giải quyết việc riêng...">
+      </div>
+      
+      <div id="dynamicFields" class="dynamic-area">
+        <!-- Chèn động các trường theo loại đơn -->
+      </div>
+
+      <div class="form-row-req">
+        <div class="form-group" style="flex: 1;" id="approverGroup">
+          <label class="req-label">Người duyệt</label>
+          <div class="approver-container">
+            <input type="text" id="approverSearch" class="form-control" placeholder="Tìm ID/Tên..." autocomplete="off">
+            <input type="hidden" id="approverSelect" value="">
+            <div id="approverResults" class="approver-results"></div>
+          </div>
+        </div>
+        <div class="form-group" style="flex: 1;" id="placeGroup">
+          <label class="req-label">Địa điểm (nếu đi ra ngoài)</label>
+          <input type="text" id="requestPlace" class="form-control" placeholder="Nơi đến...">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="req-label">Lý do chi tiết & Ghi chú</label>
+        <textarea id="requestReason" class="form-control" rows="2" placeholder="Nhập lý do chi tiết hoặc ghi chú thêm..."></textarea>
+      </div>
+
+      <div id="createStatus" class="status-box" style="display: none;"></div>
+    </div>
+    <div class="modal-footer" style="padding-top: 16px; border-top: 1px solid var(--border-glass);">
+      <button id="submitRequest" class="btn-primary" style="width: 100%; justify-content: center; height: 44px; font-size: 15px;">
+        <span class="icon">🚀</span> Gửi đơn
+      </button>
     </div>
   </div>
 </div>`;
@@ -314,18 +386,22 @@ style.innerHTML = `
 #glassRoot.size-small .weekday, #glassRoot.size-medium .weekday { padding: 4px; font-size: 10px; }
 
 .stats-panel { display: flex; flex-direction: column; gap: 12px; }
-.stat-card { background: var(--card-bg); border: 1px solid var(--border-glass); padding: 12px 16px; border-radius: 14px; display: flex; flex-direction: column; gap: 2px; }
-.stat-label { font-size: 10px; text-transform: uppercase; color: var(--text-muted); }
-.stat-value { font-size: 22px; font-weight: 800; }
-.stat-value.warning { color: var(--warning); }
-.stat-value.danger { color: var(--danger); }
+.stat-card {
+  background: var(--card-bg); border: 1px solid var(--border-glass);
+  padding: 12px 16px; border-radius: 14px;
+  display: flex; flex-direction: column; gap: 2px;
+  cursor: pointer; transition: all 0.2s;
+}
+.stat-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.1); }
+.stat-card.active { border-color: var(--accent); background: rgba(59, 130, 246, 0.2); }
 
 .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: var(--card-bg); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border-glass); }
 .month-nav { display: flex; align-items: center; gap: 10px; }
 .nav-btn { background: rgba(255,255,255,0.1); border: none; color: var(--text-main); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; }
 #glassRoot[class*="theme-"] .nav-btn { background: rgba(0,0,0,0.05); }
 #monthPicker { background: transparent; border: none; color: var(--text-main); font-weight: 700; font-size: 15px; outline: none; cursor: pointer; }
-.btn-primary { background: var(--primary); color: #fff; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.btn-primary { background: var(--primary); color: #fff; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; transition: all 0.2s; }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
 
 .weekday { text-align: center; padding: 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); }
 
@@ -385,9 +461,11 @@ style.innerHTML = `
   border-radius: 20px; padding: 24px; border: 1px solid var(--border-glass);
   box-shadow: 0 20px 40px rgba(0,0,0,0.5);
 }
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; }
-.modal-header h2 { margin: 0; font-size: 22px; }
-#closeModal { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; gap: 12px; }
+.modal-header-title { display: flex; align-items: center; gap: 12px; flex: 1; }
+.modal-header h2 { margin: 0; font-size: 20px; white-space: nowrap; }
+#closeModal, #closeCreateModal { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; transition: color 0.2s; padding: 4px; display: flex; align-items: center; justify-content: center; }
+#closeModal:hover, #closeCreateModal:hover { color: var(--danger); }
 
 .modal-body { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
 .req-item { background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 12px; padding: 16px; position: relative; }
@@ -429,10 +507,101 @@ style.innerHTML = `
 .mp-month-btn.active { background: var(--primary); color: #fff; }
 .mp-today-btn { grid-column: span 3; margin-top: 8px; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-glass); color: var(--text-main); font-weight: 700; cursor: pointer; }
 .mp-today-btn:hover { background: rgba(255,255,255,0.15); }
+
+/* FORM STYLES */
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.form-control {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+.form-control:focus { border-color: var(--accent); background: rgba(255,255,255,0.1); }
+select.form-control {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  padding-right: 36px;
+}
+select.form-control option { background: #1e293b; color: #fff; padding: 10px; }
+.time-picker-grid { display: flex; gap: 4px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 12px; padding: 4px; }
+.time-picker-grid select { background: transparent !important; border: none !important; text-align: center; padding-right: 20px !important; background-position: right 4px center !important; }
+.time-picker-grid span { color: var(--text-muted); align-self: center; font-weight: 700; opacity: 0.5; }
+.btn-ghost { background: transparent; border: 1px solid var(--border-glass); color: var(--text-main); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 13px; transition: all 0.2; }
+.btn-ghost:hover { background: rgba(255,255,255,0.05); }
+.btn-delete { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; transition: all 0.2s; margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; }
+.btn-delete:hover { background: #ef4444; color: #fff; }
+
+.form-row-req { display: flex; gap: 12px; margin-bottom: 12px; }
+.asf-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; user-select: none; }
+.status-box { padding: 12px; border-radius: 10px; font-size: 13px; margin-top: 12px; border: 1px solid transparent; }
+.status-box.success { background: rgba(16, 185, 129, 0.15); color: #10b981; border-color: rgba(16, 185, 129, 0.3); }
+.status-box.danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+.form-control:read-only { background: rgba(255,255,255,0.02); color: var(--text-muted); cursor: default; }
+.asf-stepper { display: flex; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid var(--border-glass); border-radius: 10px; overflow: hidden; height: 38px; }
+.asf-stepper button { width: 32px; height: 100%; border: none; background: rgba(255,255,255,0.03); color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.2s; }
+.asf-stepper button:hover { background: var(--accent); color: #fff; }
+.asf-stepper span { flex: 1; text-align: center; font-weight: 700; font-size: 15px; min-width: 30px; user-select: none; }
+.time-picker-row { display: flex; align-items: center; gap: 8px; }
+.time-picker-row .asf-stepper { flex: 1; }
+.time-picker-row .sep { color: var(--text-muted); font-weight: 700; opacity: 0.5; }
+
+/* Searchable Approver */
+.approver-container { position: relative; width: 100%; }
+.approver-results {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: #1e293b; border: 1px solid var(--border-glass);
+  border-top: none; border-radius: 0 0 12px 12px;
+  z-index: 2000; max-height: 200px; overflow-y: auto;
+  display: none; box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+}
+.approver-item {
+  padding: 10px 14px; cursor: pointer; color: var(--text-main);
+  border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;
+  transition: background 0.2s;
+}
+.approver-item:hover { background: var(--accent); color: #fff; }
+.approver-item span { color: var(--text-muted); font-size: 11px; margin-left: 8px; }
+.approver-item:hover span { color: rgba(255,255,255,0.8); }
+
+/* Global Cursor pointers */
+button, .nav-btn, .mp-month-btn, .mp-today-btn, .theme-selector button, .month-display, .modal-header button { cursor: pointer !important; }
 `;
 document.head.appendChild(style);
 
 /* ========= LOGIC: UTILS & API ========= */
+const ABSENT_TYPES = [
+  { id: "NP", text: "Nghỉ phép năm" },
+  { id: "KL", text: "Nghỉ không lương" },
+  { id: "GC50", text: "Công 50%" },
+  { id: "CT", text: "Công tác" },
+  { id: "BHXH", text: "Nghỉ BHXH" },
+  { id: "NC", text: "Nghỉ cưới, ma chay" },
+  { id: "BP", text: "Làm bù phép" },
+  { id: "GC80", text: "Công 80%" },
+  { id: "CN", text: "Nghỉ chế độ con nhỏ" },
+  { id: "TX", text: "Trễ xe công ty" },
+  { id: "TS", text: "Nghỉ thai sản" },
+  { id: "NT1", text: "Nghỉ vợ sinh con" },
+  { id: "BN", text: "Làm bù công nhật" }
+];
+
+const SHIFT_LIST = [
+  { id: "CA01 - 08:00", text: "CA01 (08:00)" },
+  { id: "CA01 - 08:30", text: "CA01 (08:30)" },
+  { id: "CA01 - 09:00", text: "CA01 (09:00)" },
+  { id: "CA01 - 10:00", text: "CA01 (10:00)" },
+  { id: "CA01 - 12:45", text: "CA01 (12:45)" },
+  { id: "CA02 - 22:00", text: "CA02 (22:00)" }
+];
+
 const UTILS = {
   parseTime: t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; },
   classify: (t, isFirst) => {
@@ -457,18 +626,16 @@ const UTILS = {
       status: getVal("StatusName"),
       shift: getVal("ShiftName")
     };
-  }
+  },
+  generateHours: () => Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')),
+  generateMinutes: () => ['00', '15', '30', '45']
 };
 
 async function fetchPeriodDates(monthStr) {
   const [y, m] = monthStr.split("-");
   const body = new URLSearchParams({ DivisionIDPeriod: SERVER_CONFIG.divisionId, TranMonth: m, TranYear: y });
   try {
-    const url = `${SERVER_CONFIG.serverHost}/Period/BeginEndDate`;
-    const r = await fetch(url, {
-      method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
-    });
-    return await r.json();
+    return await api("/Period/BeginEndDate", body, false);
   } catch (e) { console.error("fetchPeriodDates error:", e); return null; }
 }
 
@@ -477,14 +644,10 @@ async function fetchPeriodUpdate(monthStr, periodData) {
   const today = new Date();
   const voucherDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
 
-  // Calculate first and last day of month in DD/MM/YYYY format
   const firstDay = new Date(parseInt(y), parseInt(m) - 1, 1);
   const lastDay = new Date(parseInt(y), parseInt(m), 0);
   const beginDateStr = `${String(firstDay.getDate()).padStart(2, '0')}/${String(firstDay.getMonth() + 1).padStart(2, '0')}/${firstDay.getFullYear()}`;
   const endDateStr = `${String(lastDay.getDate()).padStart(2, '0')}/${String(lastDay.getMonth() + 1).padStart(2, '0')}/${lastDay.getFullYear()}`;
-
-  // console.log("Period Data received:", periodData);
-  // console.log("Calculated dates:", { beginDate: firstDay, endDate: lastDay, beginDateStr, endDateStr });
 
   const body = new URLSearchParams({
     IsNoReset: "",
@@ -500,22 +663,26 @@ async function fetchPeriodUpdate(monthStr, periodData) {
     Closing: "0"
   });
 
-  // console.log("Period Update Payload:", body.toString());
-
   try {
-    const url = `${SERVER_CONFIG.serverHost}/Period/Update`;
-    const r = await fetch(url, {
-      method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
-    });
-    // console.log("Period Update HTTP Status:", r.status);
-    const response = await r.text();
-    // console.log("Period Update Response (raw):", response);
-    try {
-      return JSON.parse(response);
-    } catch {
-      return response;
-    }
+    return await api("/Period/Update", body, false);
   } catch (e) { console.error("fetchPeriodUpdate error:", e); return null; }
+}
+
+async function api(path, body, isJson = true) {
+  const res = await fetch(SERVER_CONFIG.serverHost + path, {
+    method: "POST",
+    headers: {
+      "Content-Type": isJson
+        ? "application/json; charset=UTF-8"
+        : "application/x-www-form-urlencoded",
+      "X-Requested-With": "XMLHttpRequest"
+    },
+    body: isJson ? JSON.stringify(body) : body
+  });
+
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch { console.log("RAW:", text); throw "Not JSON"; }
 }
 
 async function fetchAttendance(monthStr) {
@@ -529,28 +696,19 @@ async function fetchAttendance(monthStr) {
     "args[4].Key": "value[]", "args[4].Value[0]": `01/${m}/${y}`, "args[4].Value[1]": `${lastDay}/${m}/${y}`
   });
   try {
-    const url = `${SERVER_CONFIG.serverHost}/GridCommon/Read?TableName=HRMT2260`;
-    const r = await fetch(url, {
-      method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
-    });
-    return r.json();
+    return await api("/GridCommon/Read?TableName=HRMT2260", body, false);
   } catch (e) { return { Data: [] }; }
 }
 
 async function fetchShift(monthStr) {
   const [y, m] = monthStr.split("-");
-  const lastDay = new Date(y, m, 0).getDate();
   const body = new URLSearchParams({
     page: 1, pageSize: 200, "args[0].Key": "key[]", "args[0].Value[0]": "EmployeeID",
-    "args[1].Key": "value[]", "args[1].Value[0]": "000174",
+    "args[1].Key": "value[]", "args[1].Value[0]": (currentData.userMeta?.EmployeeID || "000174"),
     "args[2].Key": "systemInfo[]", "args[2].Value[0]": "HRM", "args[2].Value[1]": "HRMF2323", "args[2].Value[2]": "HRMT2323"
   });
   try {
-    const url = `${SERVER_CONFIG.serverHost}/GridCommon/ReadEdit?TableName=HRMT2323`;
-    const r = await fetch(url, {
-      method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
-    });
-    return r.json();
+    return await api("/GridCommon/ReadEdit?TableName=HRMT2323", body, false);
   } catch (e) { return { Data: [] }; }
 }
 
@@ -565,14 +723,94 @@ async function fetchLeaveRequests(monthStr) {
     "args[4].Key": "value[]", "args[4].Value[0]": `01/${m}/${y}`, "args[4].Value[1]": `${lastDay}/${m}/${y}`
   });
   try {
-    const url = `${SERVER_CONFIG.serverHost}/GridCommon/Read?TableName=OOT9000`;
-    const r = await fetch(url, {
-      method: "POST", headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body
-    });
-    const json = await r.json();
-    // console.log("[Leave Requests] Data:", json);
-    return json;
+    return await api("/GridCommon/Read?TableName=OOT9000", body, false);
   } catch (e) { console.error("[Leave Requests] Error:", e); return { Data: [] }; }
+}
+
+async function getNewVoucherKey(type = "DXP") {
+  const [y, m] = SELECTED_MONTH.split("-");
+  const table = `HRMT2360M${m}${y}`;
+
+  // Map internal type to ERP RequestTypeID
+  let reqType = "DXP";
+  if (type === "DXBSQT") reqType = "DXBSQT";
+  else if (type === "DXDC") reqType = "DXDC";
+
+  const body = new URLSearchParams({
+    "table": table,
+    "type": reqType,
+    "id": ""
+  });
+
+  try {
+    const res = await api("/HRM/OOF9000/LoadKeyByRequestTypeID", body, false);
+    return res; // Expected: { LastKey, LastKeyAPK, ID }
+  } catch (e) {
+    console.error("[Voucher Key] Error:", e);
+    return { LastKey: "0000", LastKeyAPK: "", ID: `${reqType}/${m}/${y.slice(-2)}/0000` };
+  }
+}
+
+async function getShiftNow(employeeID, date) {
+  try {
+    const res = await api("/HRM/HRMF2360/GetShiftNow", { EmployeeID: employeeID, WorkDate: date }, true);
+    return res;
+  } catch (e) { return ""; }
+}
+
+async function getApprovePersons(type = "DXP", deptId = "") {
+  const prefixMap = {
+    'DXNP': 'DXP', 'DXRN': 'DXP', 'DXLTG': 'DXP',
+    'DXBSQT': 'DXP', 'DXDC': 'DXP'
+  };
+  const category = prefixMap[type] || 'DXP';
+  console.log(`[Approver] Fetching for category: ${category} (Original: ${type})`);
+  try {
+    const payload = [
+      { key: "Name", value: "ApprovePerson01ID" },
+      { key: "DepartmentID", value: deptId },
+      { key: "SectionID", value: "" },
+      { key: "SubsectionID", value: "" },
+      { key: "ProcessID", value: "" },
+      { key: "Type", value: category },
+      { key: "Num", value: 2 },
+      { key: "ApprovePersonID", value: [] }
+    ];
+    return await api("/HRM/OOF9000/LoadDataComboApprovePerson", payload, true);
+  } catch (e) { console.error("Approver Error:", e); return []; }
+}
+
+async function submitVoucher(data) {
+  try {
+    return await api("/GridCommon/InsertUpdatePopupMasterDetailV2/HRM/HRMF2361?isUpdate=false", data, true);
+  } catch (e) { console.error("Submit Error:", e); return { Status: 1, Message: e.message }; }
+}
+
+async function deleteRequest(apk) {
+  if (!confirm("Bạn có chắc chắn muốn xóa đơn này?")) return;
+  const body = new URLSearchParams();
+  body.append("dt", `${apk},MA,`);
+  body.append("cl", "HRMT2360");
+  body.append("cl", "APK");
+
+  try {
+    const res = await api("/GridCommon/DeleteViewMaster2/HRM/HRMF2362?Type=0", body, false);
+    // ERP trả về [] hoặc rỗng khi xóa thành công
+    const isSuccess = !res ||
+      (Array.isArray(res)) ||
+      res.Status === 0 ||
+      res.UpdateSuccess;
+
+    if (isSuccess) {
+      alert("Xóa đơn thành công!");
+      document.getElementById("detailModal").style.display = "none";
+      load();
+    } else {
+      alert("Lỗi khi xóa: " + (res.Message || "Không xác định"));
+    }
+  } catch (e) {
+    alert("Lỗi kết nối khi xóa đơn.");
+  }
 }
 
 async function fetchRequestDetail(apk) {
@@ -582,6 +820,7 @@ async function fetchRequestDetail(apk) {
     const r = await fetch(url);
     const html = await r.text();
     const data = UTILS.parseHTMLDetail(html);
+    data.apk = apk; // Inject APK for deletion
     DETAIL_CACHE.set(apk, data);
     return data;
   } catch (e) { return null; }
@@ -787,7 +1026,15 @@ async function processData(attendanceData, shiftData, leaveData) {
     }
   });
 
-  currentData = { map, shiftMap, requestMap, stats: { workDays: Object.keys(map).length, late, early } };
+  const userMeta = userSource ? {
+    EmployeeID: userSource.EmployeeID,
+    FullName: userSource.FullName,
+    DivisionID: userSource.DivisionID || "MA",
+    DepartmentID: userSource.DepartmentID || "",
+    DepartmentName: userSource.DepartmentName || ""
+  } : null;
+
+  currentData = { map, shiftMap, requestMap, userMeta, stats: { workDays: Object.keys(map).length, late, early } };
   return currentData;
 }
 
@@ -896,9 +1143,10 @@ function openModal(d, m, y, times, requests) {
 
   if (requests.length > 0) {
     requests.forEach(r => {
+      const isPending = r.status !== 'Duyệt';
       html += `
-            <div class="req-item">
-                <span class="req-status ${r.status === 'Duyệt' ? '' : 'pending'}">${r.status}</span>
+            <div class="req-item" style="position: relative;">
+                <span class="req-status ${isPending ? 'pending' : ''}">${r.status}</span>
                 <h3>${r.description}</h3>
                 <div class="req-grid">
                     <div class="req-field"><span class="req-label">Loại</span><span class="req-val">${r.requestType}</span></div>
@@ -906,13 +1154,330 @@ function openModal(d, m, y, times, requests) {
                     <div class="req-field"><span class="req-label">Lý do</span><span class="req-val">${r.reason}</span></div>
                     <div class="req-field"><span class="req-label">Ca</span><span class="req-val">${r.shift}</span></div>
                 </div>
+                ${isPending ? `<button class="btn-delete" data-apk="${r.apk}"><span class="icon">🗑️</span> Xóa đơn</button>` : ''}
             </div>`;
     });
   }
 
-  if (html === "") html = "<p style='text-align:center; color: var(--text-muted)'>Không có dữ liệu đặc biệt cho ngày này.</p>";
   mBody.innerHTML = html;
+
+  // Gắn sự kiện xóa đơn (Tránh lỗi ReferenceError trong content script)
+  mBody.querySelectorAll(".btn-delete").forEach(btn => {
+    btn.onclick = () => deleteRequest(btn.dataset.apk);
+  });
+
+  // Event for "Create New" button in HEADER
+  const createBtn = document.getElementById("openCreateFormBtn");
+  if (createBtn) {
+    createBtn.onclick = () => {
+      modal.style.display = "none";
+      openCreateRequestModal(d, m, y);
+    };
+  }
+
   modal.style.display = "flex";
+}
+
+/* ========= CREATE REQUEST LOGIC ========= */
+async function openCreateRequestModal(d, m, y) {
+  const cModal = document.getElementById("createRequestModal");
+  const cTitle = document.getElementById("createModalTitle");
+  const typeSelect = document.getElementById("requestTypeSelect");
+  const dynamicFields = document.getElementById("dynamicFields");
+  const approverSelect = document.getElementById("approverSelect");
+  const statusDiv = document.getElementById("createStatus");
+  const submitBtn = document.getElementById("submitRequest");
+
+  const dateStr = `${d.toString().padStart(2, '0')}/${m.toString().padStart(2, '0')}/${y}`;
+  const sqlDate = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+
+  cTitle.innerText = `Tạo đơn - ${dateStr}`;
+  statusDiv.style.display = "none";
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="icon">⏳</span> Đang tải...';
+
+  // Lấy dữ liệu khởi tạo (Key, Approvers, Shift)
+  const loadInitialData = async () => {
+    try {
+      const type = typeSelect.value;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="icon">⏳</span> Đang tải...';
+
+      const [keyData, approvers, currentShift] = await Promise.all([
+        getNewVoucherKey(type),
+        getApprovePersons(type, currentData.userMeta?.DepartmentID),
+        getShiftNow(currentData.userMeta?.EmployeeID, sqlDate)
+      ]);
+
+      const searchInput = document.getElementById("approverSearch");
+      const hiddenInput = document.getElementById("approverSelect");
+      const resultsDiv = document.getElementById("approverResults");
+
+      const renderApprovers = (list) => {
+        resultsDiv.innerHTML = (list || []).filter(a => a.EmployeeID).map(a =>
+          `<div class="approver-item" data-id="${a.EmployeeID}">${a.FullName} <span>(${a.EmployeeID})</span></div>`
+        ).join('') || '<div class="approver-item" style="cursor: default; opacity: 0.6;">Không tìm thấy</div>';
+
+        resultsDiv.querySelectorAll(".approver-item").forEach(item => {
+          item.onclick = (e) => {
+            const id = item.dataset.id;
+            const name = item.innerText.split('(')[0].trim();
+            if (id) {
+              hiddenInput.value = id;
+              searchInput.value = `${name} (${id})`;
+              resultsDiv.style.display = "none";
+            }
+            e.stopPropagation();
+          };
+        });
+      };
+
+      searchInput.onfocus = () => { if (approvers?.length) resultsDiv.style.display = "block"; };
+      searchInput.oninput = (e) => {
+        const query = e.target.value.toLowerCase();
+        const filtered = (approvers || []).filter(a =>
+          (a.FullName || '').toLowerCase().includes(query) || (a.EmployeeID || '').toLowerCase().includes(query)
+        );
+        renderApprovers(filtered);
+        resultsDiv.style.display = "block";
+      };
+
+      // Đóng khi click ngoài
+      const closeResults = (e) => {
+        if (!e.target.closest(".approver-container")) {
+          resultsDiv.style.display = "none";
+        }
+      };
+      window.addEventListener("click", closeResults);
+
+      renderApprovers(approvers || []);
+
+      const shiftAuto = (currentShift || "").trim() || currentData.shiftMap[d] || "";
+      typeSelect.dataset.shift = shiftAuto;
+
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="icon">🚀</span> Gửi đơn';
+      return keyData;
+    } catch (e) {
+      statusDiv.innerText = "Lỗi khi tải dữ liệu khởi tạo.";
+      statusDiv.className = "status-box danger";
+      statusDiv.style.display = "block";
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="icon">🚀</span> Gửi đơn';
+    }
+  };
+
+  let currentKeyData = await loadInitialData();
+
+  const updateFields = async () => {
+    const type = typeSelect.value;
+    let fieldsHtml = "";
+
+    // Refresh key when type changes
+    currentKeyData = await loadInitialData();
+    const shift = typeSelect.dataset.shift || "";
+
+    const renderStepper = (id, val, min, max, step = 1) => `
+      <div class="asf-stepper">
+        <button type="button" onclick="const s=this.parentNode.querySelector('.step-val'); s.innerText=String(Math.max(${min},Number(s.innerText)-${step})).padStart(2,'0')">−</button>
+        <span class="step-val" id="${id}">${String(val).padStart(2, '0')}</span>
+        <button type="button" onclick="const s=this.parentNode.querySelector('.step-val'); s.innerText=String(Math.min(${max},Number(s.innerText)+${step})).padStart(2,'0')">+</button>
+      </div>`;
+
+    if (type === "DXNP") {
+      fieldsHtml = `
+        <div class="form-row-req">
+          <div class="form-group" style="flex: 2;"><label class="req-label">Loại phép</label>
+            <select id="absentType" class="form-control">
+              ${ABSENT_TYPES.map(t => `<option value="${t.id}">${t.text} (${t.id})</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group"><label class="req-label">Số giờ</label><input type="number" id="dailyHours" class="form-control" value="8" step="0.5"></div>
+        </div>
+        <div class="form-row-req">
+          <div class="form-group"><label class="req-label">Ca hiện tại</label><input type="text" id="shiftID" class="form-control" value="${shift}" readonly></div>
+        </div>`;
+    } else if (type === "DXLTG") {
+      fieldsHtml = `
+        <div class="form-row-req">
+          <div class="form-group"><label class="req-label">Từ lúc</label>
+            <div class="time-picker-row">
+              ${renderStepper('fromHour', 17, 0, 23)} <span class="sep">:</span> ${renderStepper('fromMin', 0, 0, 45, 15)}
+            </div>
+          </div>
+          <div class="form-group"><label class="req-label">Đến lúc</label>
+            <div class="time-picker-row">
+              ${renderStepper('toHour', 19, 0, 23)} <span class="sep">:</span> ${renderStepper('toMin', 0, 0, 45, 15)}
+            </div>
+          </div>
+        </div>
+        <div class="form-row-req">
+          <div class="form-group"><label class="req-label">Ca hiện tại</label><input type="text" id="shiftID" class="form-control" value="${shift}" readonly></div>
+        </div>`;
+    } else if (type === "DXBSQT") {
+      fieldsHtml = `
+        <div class="form-row-req">
+          <div class="form-group"><label class="req-label">Giờ bổ sung</label>
+            <div class="time-picker-row">
+              ${renderStepper('swipeHour', 8, 0, 23)} <span class="sep">:</span> ${renderStepper('swipeMin', 0, 0, 45, 15)}
+            </div>
+          </div>
+          <div class="form-group"><label class="req-label">Loại chấm</label>
+            <select id="inOutID" class="form-control"><option value="V">Vào</option><option value="R">Ra</option></select>
+          </div>
+        </div>
+        <div class="form-row-req">
+          <div class="form-group"><label class="req-label">Ca hiện tại</label><input type="text" id="shiftID" class="form-control" value="${shift}" readonly></div>
+        </div>`;
+    } else if (type === "DXRN") {
+      fieldsHtml = `
+        <div class="form-row-req">
+          <div class="form-group"><label class="req-label">Từ lúc</label>
+            <div class="time-picker-row">
+              ${renderStepper('fromHour', 8, 0, 23)} <span class="sep">:</span> ${renderStepper('fromMin', 0, 0, 45, 15)}
+            </div>
+          </div>
+          <div class="form-group"><label class="req-label">Đến lúc</label>
+            <div class="time-picker-row">
+              ${renderStepper('toHour', 10, 0, 23)} <span class="sep">:</span> ${renderStepper('toMin', 0, 0, 45, 15)}
+            </div>
+          </div>
+          <div class="form-group"><label class="req-label">Số giờ vắng</label><input type="number" id="dailyHours" class="form-control" value="2" step="0.5"></div>
+        </div>`;
+    } else if (type === "DXDC") {
+      fieldsHtml = `
+        <div class="form-row-req">
+          <div class="form-group" style="flex: 2;"><label class="req-label">Đổi sang ca</label>
+            <select id="newShiftID" class="form-control">
+              ${SHIFT_LIST.map(s => `<option value="${s.id}">${s.text}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="form-row-req">
+          <div class="form-group"><label class="req-label">Ca cũ</label><input type="text" id="shiftID" class="form-control" value="${shift}" readonly></div>
+        </div>`;
+    }
+    dynamicFields.innerHTML = fieldsHtml;
+    loadInitialData().then(k => currentKeyData = k);
+  };
+
+  typeSelect.onchange = updateFields;
+  updateFields();
+  cModal.style.display = "flex";
+  document.getElementById("closeCreateModal").onclick = () => cModal.style.display = "none";
+
+  submitBtn.onclick = async () => {
+    if (!currentKeyData || !currentData.userMeta) return;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="icon">⏳</span> Đang gửi...';
+    statusDiv.style.display = "none";
+
+    try {
+      const type = typeSelect.value;
+      const desc = document.getElementById("requestDescription").value;
+      const reason = document.getElementById("requestReason").value;
+      const place = document.getElementById("requestPlace").value;
+      const approver = approverSelect.value;
+      const isSeri = document.getElementById("isSeri").checked ? "1" : "0";
+
+      const running = String(Number(currentKeyData.LastKey) + 1).padStart(4, "0");
+      const shortYear = y.toString().slice(-2);
+      const mmStr = m.toString().padStart(2, '0');
+
+      let prefix = "DXP";
+      if (type === "DXBSQT") prefix = "DOT";
+      else if (type === "DXDC") prefix = "DQT";
+
+      const appID = `${prefix}/${mmStr}/${shortYear}/${running}`;
+
+      // FULL ERP PAYLOAD mapping (based on test_create.js)
+      const baseData = {
+        RequestTypeID: "7," + (type === "DXBSQT" ? "DXBSQT" : (type === "DXDC" ? "DXDC" : "DXP")),
+        ApplicationID: "7," + appID,
+        AbsentTypeID: "7,", // Default
+        Description: "12," + desc,
+        DepartmentID: "7," + (currentData.userMeta.DepartmentID || ""),
+        SectionID: "7,", SubsectionID: "7,", ProcessID: "7,",
+        EmployeeName: "7," + (currentData.userMeta.FullName || ""),
+
+        RequestFromDate: "9," + dateStr, RequestFromDate_DT: "13,",
+        RequestToDate: "9," + dateStr, RequestToDate_DT: "13,",
+
+        DailyHours: "8,0", TotalTime: "8,0.00", OverTime: "8,0.00", OverTimeNN: "8,0.00", OverTimeCompany: "8,0.00",
+
+        ShiftNow: "9,", ShiftID: "9,", // Default
+        Reason: "7," + reason, Date: "13,", InOutID: "7,", Place: "7," + place, Note: "7,",
+
+        DaysRemained: "8,0.0", OTDaysRemained: "8,0.0", UseVehicle: "7,",
+        APK: "1,", APKDetail: "1,", FromToDate: "9,",
+        DivisionID: "7," + (currentData.userMeta.DivisionID || ""),
+        DepartmentName: "7," + (currentData.userMeta.DepartmentName || ""),
+        SectionName: "7,", SubsectionName: "7,", ProcessName: "7,",
+        EmployeeID: "7," + (currentData.userMeta.EmployeeID || ""),
+        CreateUserID: "7,", CreateDate: "9,", LastModifyUserID: "7,", LastModifyDate: "9,",
+
+        LastKey: "7," + currentKeyData.LastKey, LastKeyAPK: "7," + currentKeyData.LastKeyAPK,
+        FormStatus: "7,AddNew", Level: "7,",
+        TypeName: "7," + (type === "DXBSQT" ? "DXBSQT" : (type === "DXDC" ? "DXDC" : "DXP")),
+        ApproveLevel: "7,1", ApprovingLevel: "7,", Type_9000: "7,",
+        GoStraightName: "7,", ComeStraightName: "7,", AbsentTypeName: "7,", ShiftName: "9,",
+        IsPreShiftOTName: "7,", InOut: "7,", AskForVehicleName: "7,", UseVehicleName: "7,",
+        HaveLunchName: "7,", IsOnTripOTName: "7,", StatusName: "7,",
+
+        Status: "6,0", ApprovalNotes: "7,", Day: "0,200",
+        ApprovePerson01ID: "7," + approver,
+        IsSeri: "6," + isSeri, GoStraight: "6,0", ComeStraight: "6,0",
+        IsPreShiftOT: "6,0", AskForVehicle: "6,0", HaveLunch: "6,0",
+        IsOnTripOT: "6,0", IsCompen: "6,0"
+      };
+
+      const shiftVal = document.getElementById("shiftID")?.value || "";
+      if (type === "DXNP") {
+        baseData.AbsentTypeID = "7," + document.getElementById("absentType").value;
+        baseData.DailyHours = "8," + document.getElementById("dailyHours").value;
+        baseData.TotalTime = "8," + document.getElementById("dailyHours").value;
+        baseData.ShiftID = "9," + shiftVal;
+      } else if (type === "DXLTG" || type === "DXRN") {
+        const fH = document.getElementById("fromHour").innerText;
+        const fM = document.getElementById("fromMin").innerText;
+        const tH = document.getElementById("toHour").innerText;
+        const tM = document.getElementById("toMin").innerText;
+        baseData.FromTime = `13,${fH}:${fM}`;
+        baseData.ToTime = `13,${tH}:${tM}`;
+        if (type === "DXLTG") {
+          baseData.ShiftID = "9," + shiftVal;
+          baseData.OverTime = "8," + (Number(tH) - Number(fH) + (Number(tM) - Number(fM)) / 60).toFixed(2);
+        } else {
+          baseData.DailyHours = "8," + document.getElementById("dailyHours").value;
+        }
+      } else if (type === "DXBSQT") {
+        const sH = document.getElementById("swipeHour").innerText;
+        const sM = document.getElementById("swipeMin").innerText;
+        baseData.SwipeTime = "9," + dateStr + " " + sH + ":" + sM;
+        baseData.InOutID = "7," + document.getElementById("inOutID").value;
+        baseData.ShiftID = "9," + shiftVal;
+      } else if (type === "DXDC") {
+        baseData.ShiftNow = "9," + shiftVal;
+        baseData.ShiftID = "9," + document.getElementById("newShiftID").value;
+      }
+
+      const res = await submitVoucher({ dataScreen: [[baseData]], voucherPackages: [] });
+      if (res.Status === 0 || res.UpdateSuccess) {
+        statusDiv.innerText = "Gửi đơn thành công!";
+        statusDiv.className = "status-box success";
+        statusDiv.style.display = "block";
+        setTimeout(() => { cModal.style.display = "none"; load(); }, 1500);
+      } else {
+        throw new Error(res.Message || "Lỗi server");
+      }
+    } catch (e) {
+      statusDiv.innerText = "Lỗi: " + e.message;
+      statusDiv.className = "status-box danger";
+      statusDiv.style.display = "block";
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="icon">🚀</span> Gửi đơn';
+    }
+  };
 }
 
 document.getElementById("closeModal").onclick = () => modal.style.display = "none";
