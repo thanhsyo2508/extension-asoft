@@ -13,10 +13,9 @@
 ## 📽️ Video Demo Trải Nghiệm
 Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông qua video dưới đây:
 
-<video width="100%" height="auto" controls poster="attendance-extension/video/giaoDienChinh.png">
-  <source src="attendance-extension/video/demo.mp4" type="video/mp4">
-  Trình duyệt của bạn không hỗ trợ tag video. Bạn có thể <a href="attendance-extension/video/demo.mp4">tải video tại đây</a>.
-</video>
+![Demo Video](attendance-extension/video/demo.mp4)
+
+*(Nếu bạn không xem được video, hãy [nhấn vào đây](attendance-extension/video/demo.mp4) để tải hoặc xem trực tiếp)*
 
 ---
 
