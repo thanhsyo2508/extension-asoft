@@ -1395,12 +1395,12 @@ async function openCreateRequestModal(d, m, y) {
         <div class="form-row-req">
           <div class="form-group"><label class="req-label">Từ lúc</label>
             <div class="time-picker-row">
-              ${renderStepper('fromHour', 17, 0, 23)} <span class="sep">:</span> ${renderStepper('fromMin', 0, 0, 45, 15)}
+              ${renderStepper('fromHour', 16, 0, 23)} <span class="sep">:</span> ${renderStepper('fromMin', 45, 0, 45, 15)}
             </div>
           </div>
           <div class="form-group"><label class="req-label">Đến lúc</label>
             <div class="time-picker-row">
-              ${renderStepper('toHour', 19, 0, 23)} <span class="sep">:</span> ${renderStepper('toMin', 0, 0, 45, 15)}
+              ${renderStepper('toHour', 18, 0, 23)} <span class="sep">:</span> ${renderStepper('toMin', 45, 0, 45, 15)}
             </div>
           </div>
         </div>
