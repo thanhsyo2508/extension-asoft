@@ -812,9 +812,8 @@ async function getNewVoucherKey(type = "DXP") {
   const table = `HRMT2360M${m}${y}`;
 
   // Map internal type to ERP RequestTypeID
-  let reqType = "DXP";
-  if (type === "DXBSQT") reqType = "DXBSQT";
-  else if (type === "DXDC") reqType = "DXDC";
+  let reqType = type;
+  if (type === "DXNP") reqType = "DXP";
 
   const body = new URLSearchParams({
     "table": table,
@@ -1251,7 +1250,7 @@ function openModal(d, m, y, times, requests) {
   if (createBtn) {
     createBtn.onclick = () => {
       modal.style.display = "none";
-      openCreateRequestModal(d, m, y);
+      openCreateRequestModal(d, m, y, times);
     };
   }
 
@@ -1259,7 +1258,7 @@ function openModal(d, m, y, times, requests) {
 }
 
 /* ========= CREATE REQUEST LOGIC ========= */
-async function openCreateRequestModal(d, m, y) {
+async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
   const cModal = document.getElementById("createRequestModal");
   const cTitle = document.getElementById("createModalTitle");
   const typeSelect = document.getElementById("requestTypeSelect");
@@ -1274,6 +1273,102 @@ async function openCreateRequestModal(d, m, y) {
 
   cTitle.innerText = `Tạo đơn - ${dateStr}`;
   statusDiv.style.display = "none";
+
+  // --- SMART SUGGESTION LOGIC ---
+  let suggested = { type: "DXNP", hours: 8, reason: "", startTime: "08:15", endTime: "17:30", swipeTime: "08:00", inOut: "V" };
+  const hasShift = !!currentData.shiftMap[d];
+  const sortedTimes = [...(attendanceTimes || [])].sort();
+  let timeCount = sortedTimes.length;
+
+  // --- DOUBLE SWIPE DETECTION ---
+  // If multiple swipes exist but the duration is too short (< 4 hours), 
+  // treat it as a single swipe (likely a double-tap error)
+  if (timeCount > 1) {
+    const duration = UTILS.parseTime(sortedTimes[timeCount - 1]) - UTILS.parseTime(sortedTimes[0]);
+    if (duration < 240) { // 4 hours threshold
+      console.log(`[Suggestion] Short duration detected (${duration} mins). Treating as single swipe.`);
+      timeCount = 1;
+    }
+  }
+
+  if (hasShift) {
+    if (timeCount === 0) {
+      suggested.type = "DXNP";
+      suggested.reason = "Nghỉ phép (vắng mặt)";
+    } else if (timeCount === 1) {
+      suggested.type = "DXBSQT";
+      const time = sortedTimes[0];
+      const hour = parseInt(time.split(":")[0]);
+      if (hour > 13) {
+        suggested.swipeTime = "08:00";
+        suggested.inOut = "V";
+        suggested.reason = "Quên quẹt thẻ vào";
+      } else {
+        suggested.swipeTime = "17:00";
+        suggested.inOut = "R";
+        suggested.reason = "Quên quẹt thẻ ra";
+      }
+    } else {
+      const inTime = sortedTimes[0];
+      const outTime = sortedTimes[timeCount - 1];
+      const isLate = UTILS.classify(inTime, true) === "late";
+      const isEarly = UTILS.classify(outTime, false) === "early";
+
+      if (isLate) {
+        // Suggested Switch Shift (DXDC) if late
+        suggested.type = "DXDC";
+        suggested.reason = "Đổi ca do đi trễ (" + inTime + ")";
+
+        // Find suitable shift: start time >= check-in time
+        const inMins = UTILS.parseTime(inTime);
+        const bestShift = SHIFT_LIST.find(s => {
+          const match = s.text.match(/(\d{2}:\d{2})/);
+          if (match) return UTILS.parseTime(match[1]) >= inMins;
+          return false;
+        }) || SHIFT_LIST[0];
+        suggested.newShiftID = bestShift.id;
+      } else if (isEarly) {
+        suggested.type = "DXBSQT";
+        suggested.swipeTime = "17:00";
+        suggested.inOut = "R";
+        suggested.reason = "Bổ sung quẹt thẻ ra (về sớm)";
+      } else {
+        // Check for OT (Normal in, late out)
+        const outMins = UTILS.parseTime(outTime);
+        if (outMins > 1035) { // > 17:15
+          suggested.type = "DXLTG";
+          suggested.startTime = "16:45";
+          // Round outTime down to nearest 15 mins
+          const roundedMins = Math.floor(outMins / 15) * 15;
+          const h = Math.floor(roundedMins / 60).toString().padStart(2, '0');
+          const m = (roundedMins % 60).toString().padStart(2, '0');
+          suggested.endTime = `${h}:${m}`;
+          suggested.reason = "Làm thêm giờ (Tăng ca)";
+        } else {
+          suggested.type = "DXLTG";
+          suggested.startTime = "16:45";
+          suggested.endTime = "18:45";
+          suggested.reason = "Làm thêm giờ";
+        }
+      }
+    }
+  } else if (timeCount > 0) {
+    suggested.type = "DXLTG"; // OT on off-day
+    // Use last checkout for OT end time
+    const outTime = sortedTimes[timeCount - 1];
+    const outMins = UTILS.parseTime(outTime);
+    const roundedMins = Math.floor(outMins / 15) * 15;
+    const h = Math.floor(roundedMins / 60).toString().padStart(2, '0');
+    const m = (roundedMins % 60).toString().padStart(2, '0');
+    suggested.startTime = "08:15";
+    suggested.endTime = `${h}:${m}`;
+    suggested.reason = "Làm thêm ngày nghỉ";
+  }
+
+  // Apply basic suggestions to existing fields
+  typeSelect.value = suggested.type;
+  document.getElementById("requestReason").value = suggested.reason;
+  document.getElementById("requestDescription").value = suggested.reason;
 
   // Populate departments
   const userDeptID = currentData.userMeta?.DepartmentID;
@@ -1385,22 +1480,24 @@ async function openCreateRequestModal(d, m, y) {
               ${ABSENT_TYPES.map(t => `<option value="${t.id}">${t.text} (${t.id})</option>`).join('')}
             </select>
           </div>
-          <div class="form-group"><label class="req-label">Số giờ</label><input type="number" id="dailyHours" class="form-control" value="8" step="0.5"></div>
+          <div class="form-group"><label class="req-label">Số giờ</label><input type="number" id="dailyHours" class="form-control" value="${suggested.hours || 8}" step="0.5"></div>
         </div>
         <div class="form-row-req">
           <div class="form-group"><label class="req-label">Ca hiện tại</label><input type="text" id="shiftID" class="form-control" value="${shift}" readonly></div>
         </div>`;
     } else if (type === "DXLTG") {
+      const [fH, fM] = (suggested.startTime || "16:45").split(":");
+      const [tH, tM] = (suggested.endTime || "18:45").split(":");
       fieldsHtml = `
         <div class="form-row-req">
           <div class="form-group"><label class="req-label">Từ lúc</label>
             <div class="time-picker-row">
-              ${renderStepper('fromHour', 16, 0, 23)} <span class="sep">:</span> ${renderStepper('fromMin', 45, 0, 45, 15)}
+              ${renderStepper('fromHour', fH, 0, 23)} <span class="sep">:</span> ${renderStepper('fromMin', fM, 0, 45, 15)}
             </div>
           </div>
           <div class="form-group"><label class="req-label">Đến lúc</label>
             <div class="time-picker-row">
-              ${renderStepper('toHour', 18, 0, 23)} <span class="sep">:</span> ${renderStepper('toMin', 45, 0, 45, 15)}
+              ${renderStepper('toHour', tH, 0, 23)} <span class="sep">:</span> ${renderStepper('toMin', tM, 0, 45, 15)}
             </div>
           </div>
         </div>
@@ -1408,15 +1505,19 @@ async function openCreateRequestModal(d, m, y) {
           <div class="form-group"><label class="req-label">Ca hiện tại</label><input type="text" id="shiftID" class="form-control" value="${shift}" readonly></div>
         </div>`;
     } else if (type === "DXBSQT") {
+      const [sH, sM] = (suggested.swipeTime || "08:00").split(":");
       fieldsHtml = `
         <div class="form-row-req">
           <div class="form-group"><label class="req-label">Giờ bổ sung</label>
             <div class="time-picker-row">
-              ${renderStepper('swipeHour', 8, 0, 23)} <span class="sep">:</span> ${renderStepper('swipeMin', 0, 0, 45, 15)}
+              ${renderStepper('swipeHour', sH, 0, 23)} <span class="sep">:</span> ${renderStepper('swipeMin', sM, 0, 45, 15)}
             </div>
           </div>
           <div class="form-group"><label class="req-label">Loại chấm</label>
-            <select id="inOutID" class="form-control"><option value="V">Vào</option><option value="R">Ra</option></select>
+            <select id="inOutID" class="form-control">
+              <option value="V" ${suggested.inOut === "V" ? "selected" : ""}>Vào</option>
+              <option value="R" ${suggested.inOut === "R" ? "selected" : ""}>Ra</option>
+            </select>
           </div>
         </div>
         <div class="form-row-req">
@@ -1442,7 +1543,7 @@ async function openCreateRequestModal(d, m, y) {
         <div class="form-row-req">
           <div class="form-group" style="flex: 2;"><label class="req-label">Đổi sang ca</label>
             <select id="newShiftID" class="form-control">
-              ${SHIFT_LIST.map(s => `<option value="${s.id}">${s.text}</option>`).join('')}
+              ${SHIFT_LIST.map(s => `<option value="${s.id}" ${suggested.newShiftID === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -1451,6 +1552,8 @@ async function openCreateRequestModal(d, m, y) {
         </div>`;
     }
     dynamicFields.innerHTML = fieldsHtml;
+    // We only want to apply suggested values on the FIRST render of fields
+    suggested = {}; // Clear after first use to avoid overriding manual changes
     loadInitialData().then(k => currentKeyData = k);
   };
 
@@ -1473,21 +1576,24 @@ async function openCreateRequestModal(d, m, y) {
       const approver = approverSelect.value;
       const selectedDeptID = document.getElementById("requestDepartmentSelect").value;
       const selectedDept = DEPARTMENT_LIST.find(d => d.id === selectedDeptID);
-      const isSeri = document.getElementById("isSeri").checked ? "1" : "0";
+      // const isSeri = document.getElementById("isSeri").checked ? "1" : "0";
+      const isSeri = "0";
 
       const running = String(Number(currentKeyData.LastKey) + 1).padStart(4, "0");
       const shortYear = y.toString().slice(-2);
       const mmStr = m.toString().padStart(2, '0');
 
       let prefix = "DXP";
-      if (type === "DXBSQT") prefix = "DOT";
+      if (type === "DXBSQT" || type === "DXLTG") prefix = "DOT";
       else if (type === "DXDC") prefix = "DQT";
+      else if (type === "DXRN") prefix = "DXP"; // Add special case if needed
 
       const appID = `${prefix}/${mmStr}/${shortYear}/${running}`;
 
       // FULL ERP PAYLOAD mapping (based on test_create.js)
+      const mappedType = type === "DXNP" ? "DXP" : type;
       const baseData = {
-        RequestTypeID: "7," + (type === "DXBSQT" ? "DXBSQT" : (type === "DXDC" ? "DXDC" : "DXP")),
+        RequestTypeID: "7," + mappedType,
         ApplicationID: "7," + appID,
         AbsentTypeID: "7,", // Default
         Description: "12," + desc,
@@ -1513,7 +1619,7 @@ async function openCreateRequestModal(d, m, y) {
 
         LastKey: "7," + currentKeyData.LastKey, LastKeyAPK: "7," + currentKeyData.LastKeyAPK,
         FormStatus: "7,AddNew", Level: "7,",
-        TypeName: "7," + (type === "DXBSQT" ? "DXBSQT" : (type === "DXDC" ? "DXDC" : "DXP")),
+        TypeName: "7," + mappedType,
         ApproveLevel: "7,1", ApprovingLevel: "7,", Type_9000: "7,",
         GoStraightName: "7,", ComeStraightName: "7,", AbsentTypeName: "7,", ShiftName: "9,",
         IsPreShiftOTName: "7,", InOut: "7,", AskForVehicleName: "7,", UseVehicleName: "7,",
@@ -1528,9 +1634,11 @@ async function openCreateRequestModal(d, m, y) {
 
       const shiftVal = document.getElementById("shiftID")?.value || "";
       if (type === "DXNP") {
+        const hours = Number(document.getElementById("dailyHours").value);
         baseData.AbsentTypeID = "7," + document.getElementById("absentType").value;
-        baseData.DailyHours = "8," + document.getElementById("dailyHours").value;
-        baseData.TotalTime = "8," + document.getElementById("dailyHours").value;
+        baseData.DailyHours = "8," + hours;
+        baseData.TotalTime = "8," + hours;
+        baseData.DaysRemained = "8,0.0";
         baseData.ShiftID = "9," + shiftVal;
       } else if (type === "DXLTG" || type === "DXRN") {
         const fH = document.getElementById("fromHour").innerText;
@@ -1541,9 +1649,16 @@ async function openCreateRequestModal(d, m, y) {
         baseData.ToTime = `13,${tH}:${tM}`;
         if (type === "DXLTG") {
           baseData.ShiftID = "9," + shiftVal;
-          baseData.OverTime = "8," + (Number(tH) - Number(fH) + (Number(tM) - Number(fM)) / 60).toFixed(2);
+          const otValue = (Number(tH) - Number(fH) + (Number(tM) - Number(fM)) / 60).toFixed(2);
+          baseData.OverTime = "8," + otValue;
+          baseData.TotalTime = "8," + otValue;
+          baseData.DailyHours = "8," + otValue;
+          baseData.DaysRemained = "8,0.0";
         } else {
-          baseData.DailyHours = "8," + document.getElementById("dailyHours").value;
+          const hours = Number(document.getElementById("dailyHours").value);
+          baseData.DailyHours = "8," + hours;
+          baseData.TotalTime = "8," + hours;
+          baseData.DaysRemained = "8,0.0";
         }
       } else if (type === "DXBSQT") {
         const sH = document.getElementById("swipeHour").innerText;

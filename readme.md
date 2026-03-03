@@ -1,273 +1,84 @@
-# 📅 Attendance Dashboard Extension
+# 📅 Asoft Attendance Dashboard Extension v2.0
 
-Một extension cho Microsoft Edge giúp quản lý và theo dõi chấm công một cách hiệu quả từ hệ thống ASP.NET HRM.
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://img.shields.io/badge/version-2.0.0-blue.svg)
+[![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
+[![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
----
+![Giao diện chính](attendance-extension/video/giaoDienChinh.png)
 
-### 🎨 Giao Diện & Trải Nghiệm (v2.0)
-- **Glass Morphism Premium**: Thiết kế hiện đại với hiệu ứng mờ nhám và viền sắc nét.
-- **Hệ thống Theme (6 màu)**: 
-  - 🌑 Dark (Mặc định) | ☀️ Light | 🌸 Spring | 🌻 Summer | 🍂 Autumn | ❄️ Winter
-  - Lưu trạng thái theme qua `chrome.storage.sync`.
-- **Micro-animations**:
-  - ✨ **Glow Pulse**: Phát sáng nhẹ cho ngày làm việc đúng giờ.
-  - 🏎️ **Light Sweep**: Hiệu ứng vượt sáng khi di chuột qua ô ngày.
-- **Bộ chọn Tháng/Năm Tùy chỉnh**: Giao diện chọn tháng hiện đại, điều hướng năm nhanh và nút "Hôm nay".
-- **Thống kê Tương tác**: Nhấn vào thẻ thống kê (Ngày công, Trễ, Sớm) để highlight ngay các ngày tương ứng trên lịch.
-- **Skeleton Loading**: Trạng thái chờ với độ tương phản cao, tối ưu theo từng theme.
-
-### 📤 Tiện Ích & Dữ Liệu
-- **Xuất báo cáo CSV/Excel**: Tải dữ liệu chấm công tháng hiện tại chỉ với 1 click (đã xử lý lỗi font Tiếng Việt).
-- **Hỗ trợ đơn từ phức tạp**: 
-  - Gộp hiển thị khi một ngày có nhiều đơn (📄 x2 Đơn).
-  - Hỗ trợ parser cho đơn Bổ sung quẹt thẻ (**DXBSQT**).
-- **Tự động hóa**: Mặc định load tháng hiện tại ngay khi mở, tự động cập nhật khi chuyển tháng.
+**Asoft Attendance Extension** là một giải pháp quản lý công và đơn từ cao cấp, được thiết kế để mang lại trải nghiệm người dùng hiện đại và thông minh ngay trên nền tảng HRM hiện có. Với ngôn ngữ thiết kế **Glass Morphism** và trí tuệ nhân tạo tích hợp, việc quản lý thời gian chưa bao giờ dễ dàng và đẹp mắt đến thế.
 
 ---
 
-## 🚀 Cài Đặt
+## 📽️ Video Demo Trải Nghiệm
+Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông qua video dưới đây:
 
-### Yêu Cầu
-- **Microsoft Edge** v90+ (hoặc Chromium-based browser)
-- Quyền truy cập hệ thống HRM tại `http://192.168.10.213:14444`
-
-### Cài Đặt Thủ Công (Developer Mode)
-
-1. Mở Microsoft Edge → `edge://extensions`
-2. Bật **Developer mode** (góc dưới trái)
-3. Nhấp **Load unpacked**
-4. Chọn thư mục `attendance-extension/`
-5. Extension sẵn sàng sử dụng ✅
+<video width="100%" height="auto" controls poster="attendance-extension/video/giaoDienChinh.png">
+  <source src="attendance-extension/video/demo.mp4" type="video/mp4">
+  Trình duyệt của bạn không hỗ trợ tag video. Bạn có thể <a href="attendance-extension/video/demo.mp4">tải video tại đây</a>.
+</video>
 
 ---
 
-## 📁 Cấu Trúc Dự Án
+## 🔥 Các Tính Năng Đột Phá
 
-```
-attendance-dashboard/
-├── attendance-extension/
-│   ├── manifest.json              # Cấu hình extension v3
-│   ├── content.js                 # Logic chính (V2.0 ~1000+ dòng)
-│   ├── popup.html                 # Popup mặc định
-│   └── calendar.css               # Stylesheet tùy chọn
-├── .gitignore                     # Git ignore file
-├── README.md                      # Tài liệu này
-├── attendance-calendar.js         # Script cũ (tham khảo)
-└── [các file khác]
-```
+### 1. 🧠 Smart Suggestion Logic (Gợi ý Thông minh)
+Không còn phải tự mình tính toán giờ giấc hay chọn loại đơn phức tạp. Hệ thống tự động phân tích:
+- **Đi trễ/Về sớm**: Tự động gợi ý bổ sung vân tay hoặc đổi ca (DXDC) phù hợp nhất với giờ quẹt thực tế.
+- **Quên quẹt thẻ**: Tự động nhận diện buổi (Sáng/Chiều) để gợi ý bổ sung giờ Vào/Ra.
+- **Làm thêm giờ (OT)**: Tự động tính toán số giờ OT dựa trên checkout thực tế và làm tròn xuống block 15 phút an toàn.
+- **Nghỉ phép**: Tự động nhận diện ngày vắng mặt để gợi ý đơn xin nghỉ.
 
----
+### 2. 🎨 Hệ Thống Theme Đa Dạng (6 Styles)
+Tùy biến không gian làm việc theo sở thích với 6 bộ giao diện được tối ưu hóa độ tương phản và thẩm mỹ:
 
-## 🔌 API Integration
+| 🌑 Dark Mode | ☀️ Light Mode | 🌸 Spring Theme |
+| :---: | :---: | :---: |
+| ![Dark](attendance-extension/video/dark.png) | ![Light](attendance-extension/video/light.png) | ![Spring](attendance-extension/video/theme-spring.png) |
 
-### 1️⃣ GET Period Boundaries
-```
-POST /Period/BeginEndDate
-```
-Lấy giới hạn kỳ kế toán hiện tại
+| 🌻 Summer Theme | 🍂 Autumn Theme | ❄️ Winter Theme |
+| :---: | :---: | :---: |
+| ![Summer](attendance-extension/video/theme-summer.png) | ![Autumn](attendance-extension/video/theme-autumn.png) | ![Winter](attendance-extension/video/theme-winter.png) |
 
-### 2️⃣ SET Period (Accounting Month)
-```
-POST /Period/Update
-Parameters:
-  - DivisionIDPeriod: "MA"
-  - Period: "03/2026"
-  - BeginDate: "01/03/2026" (DD/MM/YYYY)
-  - EndDate: "31/03/2026"   (DD/MM/YYYY)
-  - TranMonth: "03"
-  - TranYear: "2026"
-```
-
-### 3️⃣ Attendance Records
-```
-POST /GridCommon/Read?TableName=HRMT2260
-Filter by AbsentDate range
-```
-
-### 4️⃣ Shift Information
-```
-POST /GridCommon/ReadEdit?TableName=HRMT2323
-```
-
-### 5️⃣ Leave Requests
-```
-POST /GridCommon/Read?TableName=OOT9000
-Filter by CreateDate range
-```
-
-### 6️⃣ Request Details
-```
-GET /ViewMasterDetail2/Index/HRM/HRMF2362?PK={id}&Table=OOT9000
-```
+### 3. 📊 Tương Tác Dữ Liệu Trực Quan
+- **Highlight theo thẻ**: Nhấn vào các chỉ số "Nghỉ", "Trễ", "Sớm" ở Sidebar để lịch tự động làm nổi bật các ngày vi phạm tương ứng.
+- **Bộ chọn Tháng/Năm Premium**: Điều hướng thời gian nhanh chóng với giao diện popup hiện đại thay vì dropdown mặc định nhàm chán.
+- **Xuất dữ liệu**: Hỗ trợ xuất báo cáo ngay lập tức cho tháng hiện tại.
 
 ---
 
-## 🛠️ Công Nghệ
+## 🛠️ Chi Tiết Chức Năng
 
-- **Vanilla JavaScript** - Không framework, không dependencies
-- **CSS3** - Glass Morphism, CSS Variables, Flexbox
-- **HTML5** - Semantic markup
-- **localStorage** - Persistent config storage
-
----
-
-## ⚙️ Configuration
-
-### localStorage Key
-```json
-"asoft-attendance-config": {
-  "top": "100px",
-  "left": "100px",
-  "width": "1080px",
-  "height": "auto",
-  "zoom": 1
-}
-```
-
-### Time Constants
-- **Check-in threshold**: 08:00 (480 minutes)
-- **Check-out threshold**: 16:45 (1005 minutes)
-
-### CSS Variables
-```css
---primary: #10b981        /* Green */
---warning: #f59e0b        /* Yellow */
---danger: #ef4444         /* Red */
---request: #a855f7        /* Purple */
---bg-glass: rgba(...)     /* Dark background */
-```
+| Chức năng | Minh họa | Đặc điểm |
+| :--- | :---: | :--- |
+| **Chi tiết ngày** | ![Detail](attendance-extension/video/day-detail.png) | Hiển thị đầy đủ giờ quẹt thẻ, tên ca, trạng thái đơn từ trong ngày. |
+| **Tạo đơn mới** | ![Create](attendance-extension/video/create-a-request.png) | Giao diện form điền sẵn (Auto-fill) thông minh, hỗ trợ tìm kiếm người duyệt nhanh. |
+| **Quản lý đơn** | ![Delete](attendance-extension/video/delete-a-request.png) | Xem trạng thái duyệt và cho phép xóa đơn trực tiếp ngay tại popup chi tiết. |
+| **Chọn tháng** | ![Picker](attendance-extension/video/pickerMonth.png) | Popup chọn tháng trực quan, hỗ trợ quay lại năm nhanh và chuyển về "Hôm nay". |
 
 ---
 
-## 📱 Responsive Breakpoints
-
-| Width | Behavior |
-|-------|----------|
-| < 650px | Ẩn sidebar stats |
-| < 950px | Compact mode |
-| ≥ 950px | Full layout |
-
----
-
-## 🔐 Security
-
-- ✅ Header `X-Requested-With: XMLHttpRequest` trên tất cả request
-- ✅ Không lưu mật khẩu hoặc dữ liệu nhạy cảm
-- ✅ Chỉ gọi API nội bộ
-- ✅ HTTPS-ready (sử dụng khi server có SSL)
+## 💻 Công Nghệ & Kiến Trúc
+Dự án được xây dựng với tiêu chí hiệu năng cao và không phụ thuộc thư viện bên ngoài:
+- **Core**: Vanilla JavaScript (ES6+) tối ưu tốc độ xử lý DOM.
+- **Styling**: CSS Variables kết hợp Backdrop Filter cho hiệu ứng kính mờ (Glass Morphism).
+- **Storage**: `chrome.storage.sync` & `localStorage` để đồng bộ cấu hình người dùng (vị trí, kích thước, theme, zoom).
+- **Communication**: Interceptor API để giao tiếp mượt mà với backend ASP.NET HRM.
 
 ---
 
-## 📊 manifest.json
+## 🚀 Hướng Dẫn Cài Đặt (Developer Mode)
 
-```json
-{
-  "manifest_version": 3,
-  "name": "Attendance Dashboard",
-  "description": "Quản lý chấm công từ hệ thống HRM",
-  "version": "1.0",
-  "permissions": ["storage"],
-  "content_scripts": [
-    {
-      "matches": ["*://*/*"],
-      "js": ["content.js"],
-      "run_at": "document_end"
-    }
-  ]
-}
-```
+Cài đặt extension vô cùng đơn giản trong 4 bước:
+
+1. **Bước 1**: Truy cập quản lý Extension trên Edge/Chrome thông qua đường dẫn `edge://extensions`.
+2. **Bước 2**: Bật **Developer mode** (Chế độ nhà phát triển) ở góc màn hình.
+3. **Bước 3**: Nhấn nút **Load unpacked** (Tải bản tiện ích đã giải nén).
+4. **Bước 4**: Chọn thư mục `attendance-extension/` trong máy tính của bạn.
+
+![Cài đặt](attendance-extension/video/giaoDienChinh.png)
+*(Lưu ý: Luôn login vào hệ thống HRM trước khi sử dụng extension)*
 
 ---
 
-## 📤 Chuẩn Bị Đẩy Lên Microsoft Edge Add-ons
-
-### Bước 1: Chuẩn Bị Tài Liệu
-- ✅ `.gitignore` - Hoàn thành
-- ✅ `README.md` - Hoàn thành (file này)
-- ✅ `manifest.json` - Phiên bản 3+
-- ⏳ Icon 128x128 (`icon-128.png`)
-- ⏳ Icon 48x48 (`icon-48.png`)
-- ⏳ Screenshot 1280x800 (khuyến cáo)
-
-### Bước 2: Tạo Package
-```bash
-# Nén thư mục extension
-zip -r attendance-dashboard-v1.0.zip attendance-extension/
-```
-
-### Bước 3: Đăng Ký
-1. Truy cập [Partner Center](https://partner.microsoft.com)
-2. Đăng nhập hoặc tạo tài khoản
-3. Tạo Extension listing mới
-4. Upload `.zip` file
-5. Điền thông tin:
-   - Tên, mô tả (EN & VN)
-   - Ảnh chụp màn hình
-   - Danh mục (Productivity)
-   - Privacy policy
-6. Gửi review (3-7 ngày)
-
-### Bước 4: Xuất Bản
-- Sau khi được phê duyệt, extension sẽ xuất hiện trên [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons)
-
----
-
-## 🐛 Debugging
-
-### Console Logs
-Mở DevTools: `F12` → Console tab
-
-Tìm logs từ extension:
-- "Calculated dates:" - Kiểm tra tính toán ngày
-- "Period Update Payload:" - Xem request body
-- "Period Update HTTP Status:" - Xem mã trạng thái
-- "Debug Data:" - Kiểm tra dữ liệu nhận được
-
-### Network Inspector
-- Tab **Network** để xem request/response
-- Lọc theo `/Period/Update` hoặc `/GridCommon/Read`
-- Kiểm tra status code (200 = OK, 500 = Error)
-
----
-
-## 📞 Hỗ Trợ
-
-Nếu gặp lỗi:
-1. Kiểm tra console (F12)
-2. Xem Network tab để debug API
-3. Đảm bảo đã login vào hệ thống
-4. Thử refresh extension bằng `Ctrl+Shift+R`
-
----
-
-## 📝 Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 28/02/2026 | Initial release |
-| 2.0 | 02/03/2026 | Premium UI, Multi-theme, CSV Export, Interactive Stats, DXBSQT support |
-
----
-
-## 📋 Checklist Trước Khi Đẩy Lên
-
-- [ ] `.gitignore` được tạo
-- [ ] `README.md` hoàn thành
-- [ ] `manifest.json` sử dụng v3
-- [ ] Không có console errors
-- [ ] Test trên Edge thực
-- [ ] `content.js` không có hardcoded debug logs
-- [ ] Icon assets được tạo (128x128, 48x48)
-- [ ] Screenshot chất lượng cao (1280x800)
-- [ ] Tất cả images có kích thước < 1MB
-
----
-
-## 📜 License
-
-Copyright © 2026. All rights reserved.
-
----
-
-**Made with ❤️ for HRM Efficiency**  
-Last updated: 02/03/2026 (v2.0)
+**Made with ❤️ by Syo & Antigravity for Asoft HRM Efficiency**
