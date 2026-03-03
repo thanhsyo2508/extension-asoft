@@ -23,15 +23,15 @@ async function loadServerConfig() {
 
 /* ========= THEME MANAGEMENT ========= */
 function applyTheme(themeName) {
-  const root = document.getElementById('glassRoot');
-  if (!root) return;
+  const container = document.getElementById('attendance-ext');
+  if (!container) return;
 
   // Remove all theme classes
-  root.classList.remove('theme-dark', 'theme-light', 'theme-spring', 'theme-summer', 'theme-autumn', 'theme-winter');
+  container.classList.remove('theme-dark', 'theme-light', 'theme-spring', 'theme-summer', 'theme-autumn', 'theme-winter');
 
   // Add the selected theme class (skip dark as it's default)
   if (themeName !== 'dark') {
-    root.classList.add(`theme-${themeName}`);
+    container.classList.add(`theme-${themeName}`);
   }
 
   // Update active state in UI
@@ -48,7 +48,7 @@ function applyTheme(themeName) {
 
 /* ========= STORAGE & CACHE ========= */
 const STORAGE_KEY = "asoft-attendance-config";
-const config = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"top":"100px","left":"100px","width":"1080px","height":"auto","zoom":1}');
+const config = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"top":"5vh","left":"5vw","width":"85vw","height":"90vh","zoom":1}');
 const DETAIL_CACHE = new Map();
 let currentZoom = config.zoom || 1;
 const formatMonth = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -164,16 +164,16 @@ app.innerHTML = `
 
 <!-- CREATE REQUEST MODAL -->
 <div id="createRequestModal" class="modal-overlay" style="display: none; z-index: 1000001;">
-  <div class="modal-content" style="width: 550px;">
+  <div class="modal-content" style="width: 100%;     max-height: 100%; overflow: overlay;">
     <div class="modal-header">
       <div class="modal-header-title">
         <h2 id="createModalTitle">Tạo đơn mới</h2>
       </div>
       <button id="closeCreateModal">✕</button>
     </div>
-    <div class="modal-body" style="max-height: 550px;">
+    <div class="modal-body">
       <div class="form-row-req">
-        <div class="form-group" style="flex: 2;">
+        <div class="form-group" style="flex: 1;">
           <label class="req-label">Loại đơn</label>
           <select id="requestTypeSelect" class="form-control">
             <option value="DXNP">Đơn xin nghỉ phép (DXNP)</option>
@@ -183,10 +183,11 @@ app.innerHTML = `
             <option value="DXDC">Đơn xin đổi ca (DXDC)</option>
           </select>
         </div>
-        <div class="form-group" style="flex: 1; display: flex; align-items: flex-end; padding-bottom: 8px;">
-          <label class="asf-checkbox-label">
-            <input type="checkbox" id="isSeri"> Hàng loạt
-          </label>
+        <div class="form-group" style="flex: 1;">
+          <label class="req-label">Khối</label>
+          <select id="requestDepartmentSelect" class="form-control">
+            <!-- Populated via JS -->
+          </select>
         </div>
       </div>
 
@@ -252,7 +253,7 @@ style.innerHTML = `
 }
 
 /* Light Theme */
-#glassRoot.theme-light {
+#attendance-ext.theme-light {
   --bg-glass: rgba(248, 250, 252, 0.98);
   --border-glass: rgba(0, 0, 0, 0.1);
   --primary: #0d9488;
@@ -270,7 +271,7 @@ style.innerHTML = `
 }
 
 /* Spring Theme (Pink/Purple) */
-#glassRoot.theme-spring {
+#attendance-ext.theme-spring {
   --bg-glass: rgba(252, 231, 243, 0.95);
   --border-glass: rgba(236, 72, 153, 0.2);
   --primary: #ec4899;
@@ -288,7 +289,7 @@ style.innerHTML = `
 }
 
 /* Summer Theme (Yellow/Orange) */
-#glassRoot.theme-summer {
+#attendance-ext.theme-summer {
   --bg-glass: rgba(254, 252, 232, 0.95);
   --border-glass: rgba(217, 119, 6, 0.2);
   --primary: #ea580c;
@@ -306,7 +307,7 @@ style.innerHTML = `
 }
 
 /* Autumn Theme (Orange/Brown) */
-#glassRoot.theme-autumn {
+#attendance-ext.theme-autumn {
   --bg-glass: rgba(254, 242, 242, 0.95);
   --border-glass: rgba(217, 70, 39, 0.2);
   --primary: #92400e;
@@ -324,7 +325,7 @@ style.innerHTML = `
 }
 
 /* Winter Theme (Blue/Cyan) */
-#glassRoot.theme-winter {
+#attendance-ext.theme-winter {
   --bg-glass: rgba(240, 249, 255, 0.96);
   --border-glass: rgba(3, 169, 244, 0.2);
   --primary: #0369a1;
@@ -343,20 +344,24 @@ style.innerHTML = `
 
 #glassRoot {
   position: fixed;
-  min-width: 480px; min-height: 300px;
-  backdrop-filter: blur(20px) saturate(180%);
+  min-width: 480px; min-height: 380px;
+  max-width: 98vw; max-height: 98vh;
+  backdrop-filter: blur(25px) saturate(200%);
   background: var(--bg-glass);
   border: 1px solid var(--border-glass);
-  border-radius: 20px;
-  padding: 20px 24px;
+  border-radius: 24px;
+  padding: 24px;
   color: var(--text-main);
   z-index: 999999;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  font-family: 'Inter', system-ui, sans-serif;
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255,255,255,0.05);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   display: flex; flex-direction: column;
   box-sizing: border-box;
   transform-origin: top left;
+  overflow: hidden;
+  transition: width 0.3s ease, height 0.3s ease, top 0.3s ease, left 0.3s ease;
 }
+#glassRoot.resizing, #glassRoot.dragging { transition: none; }
 .actions { display: flex; align-items: center; gap: 12px; }
 .glass-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: move; user-select: none; }
 .brand { display: flex; gap: 12px; align-items: center; pointer-events: none; }
@@ -367,18 +372,38 @@ style.innerHTML = `
 #closeBtn:hover { background: var(--danger); transform: rotate(90deg); }
 
 .zoom-controls { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border-glass); }
-#glassRoot[class*="theme-"] .zoom-controls { background: rgba(0,0,0,0.05); }
+#attendance-ext[class*="theme-"] .zoom-controls { background: rgba(0,0,0,0.05); }
 .zoom-controls button { background: none; border: none; color: var(--text-main); cursor: pointer; padding: 2px 6px; font-size: 14px; transition: opacity 0.2s; }
 .zoom-controls button:hover { opacity: 0.7; }
 #zoomLevel { font-size: 11px; font-weight: 700; color: var(--text-muted); min-width: 35px; text-align: center; }
 
 .theme-selector { display: flex; gap: 6px; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border-glass); }
-#glassRoot[class*="theme-"] .theme-selector { background: rgba(0,0,0,0.05); }
+#attendance-ext[class*="theme-"] .theme-selector { background: rgba(0,0,0,0.05); }
 .theme-selector button { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: transform 0.2s; }
 .theme-selector button:hover { transform: scale(1.2); }
 .theme-selector button.active { border: 2px solid var(--primary); transform: scale(1.2); }
 
-.dashboard-grid { display: grid; grid-template-columns: 200px 1fr; gap: 20px; flex: 1; overflow: hidden; }
+.dashboard-grid { 
+  display: grid; 
+  grid-template-columns: 220px 1fr; 
+  gap: 24px; 
+  flex: 1; 
+  overflow: hidden; 
+  padding-bottom: 8px;
+}
+.main-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+#calendar {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+#calendar::-webkit-scrollbar { width: 5px; }
+#calendar::-webkit-scrollbar-thumb { background: var(--border-glass); border-radius: 10px; }
 
 /* RESPONSIVE LAYOUTS */
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 12px; width: 100%; }
@@ -431,7 +456,7 @@ style.innerHTML = `
 .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: var(--card-bg); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border-glass); }
 .month-nav { display: flex; align-items: center; gap: 10px; }
 .nav-btn { background: rgba(255,255,255,0.1); border: none; color: var(--text-main); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; }
-#glassRoot[class*="theme-"] .nav-btn { background: rgba(0,0,0,0.05); }
+#attendance-ext[class*="theme-"] .nav-btn { background: rgba(0,0,0,0.05); }
 #monthPicker { background: transparent; border: none; color: var(--text-main); font-weight: 700; font-size: 15px; outline: none; cursor: pointer; }
 .btn-primary { background: var(--primary); color: #fff; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; transition: all 0.2s; }
 .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
@@ -490,9 +515,10 @@ style.innerHTML = `
   animation: fadeIn 0.3s;
 }
 .modal-content {
-  background: #1e293b; color: #fff; width: 600px; max-width: 90%;
-  border-radius: 20px; padding: 24px; border: 1px solid var(--border-glass);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  background: var(--bg-glass); color: var(--text-main); width: 600px; max-width: 90%;
+  border-radius: 24px; padding: 24px; border: 1px solid var(--border-glass);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(40px) saturate(180%);
 }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; gap: 12px; }
 .modal-header-title { display: flex; align-items: center; gap: 12px; flex: 1; }
@@ -500,7 +526,7 @@ style.innerHTML = `
 #closeModal, #closeCreateModal { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; transition: color 0.2s; padding: 4px; display: flex; align-items: center; justify-content: center; }
 #closeModal:hover, #closeCreateModal:hover { color: var(--danger); }
 
-.modal-body { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.modal-body {overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
 .req-item { background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 12px; padding: 16px; position: relative; }
 .req-item h3 { margin: 0 0 8px 0; font-size: 14px; color: var(--request); text-transform: uppercase; }
 .req-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -519,8 +545,9 @@ style.innerHTML = `
 @keyframes glow-pulse { 0% { box-shadow: 0 0 5px var(--primary-glow); } 50% { box-shadow: 0 0 15px var(--primary-glow); } 100% { box-shadow: 0 0 5px var(--primary-glow); } }
 
 /* V2.0 ADDITIONS */
-.btn-secondary { background: rgba(255,255,255,0.05); border: 1px solid var(--border-glass); color: #fff; padding: 6px 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 14px; }
-.btn-secondary:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); }
+.btn-secondary { background: var(--card-bg); border: 1px solid var(--border-glass); color: var(--text-main); padding: 6px 12px; border-radius: 12px; cursor: pointer; transition: all 0.2s; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); transform: translateY(-1px); }
+#attendance-ext.theme-light .btn-secondary:hover { background: rgba(0,0,0,0.05); }
 
 .day.normal-work { animation: glow-pulse 3s infinite ease-in-out; }
 .day::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); transform: skewX(-25deg); transition: none; pointer-events: none; }
@@ -563,7 +590,7 @@ select.form-control {
   background-size: 16px;
   padding-right: 36px;
 }
-select.form-control option { background: #1e293b; color: #fff; padding: 10px; }
+select.form-control option { background: var(--bg-glass); color: var(--text-main); padding: 10px; }
 .time-picker-grid { display: flex; gap: 4px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 12px; padding: 4px; }
 .time-picker-grid select { background: transparent !important; border: none !important; text-align: center; padding-right: 20px !important; background-position: right 4px center !important; }
 .time-picker-grid span { color: var(--text-muted); align-self: center; font-weight: 700; opacity: 0.5; }
@@ -590,10 +617,11 @@ select.form-control option { background: #1e293b; color: #fff; padding: 10px; }
 .approver-container { position: relative; width: 100%; }
 .approver-results {
   position: absolute; top: 100%; left: 0; right: 0;
-  background: #1e293b; border: 1px solid var(--border-glass);
+  background: var(--bg-glass); border: 1px solid var(--border-glass);
   border-top: none; border-radius: 0 0 12px 12px;
   z-index: 2000; max-height: 200px; overflow-y: auto;
   display: none; box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+  backdrop-filter: blur(20px);
 }
 .approver-item {
   padding: 10px 14px; cursor: pointer; color: var(--text-main);
@@ -624,6 +652,25 @@ const ABSENT_TYPES = [
   { id: "TS", text: "Nghỉ thai sản" },
   { id: "NT1", text: "Nghỉ vợ sinh con" },
   { id: "BN", text: "Làm bù công nhật" }
+];
+
+const DEPARTMENT_LIST = [
+  { id: "AGV", name: "AGV" },
+  { id: "AI", name: "AI" },
+  { id: "BOD", name: "Lãnh đạo" },
+  { id: "HCNS", name: "Phòng HCNS" },
+  { id: "ICT", name: "ICT" },
+  { id: "KHO", name: "Phòng kho" },
+  { id: "KT", name: "Kế toán" },
+  { id: "LR", name: "Lắp rắp" },
+  { id: "MDT", name: "Xưởng Gia công" },
+  { id: "PO", name: "Mua hàng" },
+  { id: "QC", name: "Phòng kiểm tra chất lượng - QC" },
+  { id: "RNDS", name: "R&D S" },
+  { id: "SALE", name: "Kinh doanh" },
+  { id: "TKCK", name: "Thiết kế cơ khí" },
+  { id: "TKD", name: "Thiết kế điện" },
+  { id: "TL", name: "Trợ lý" }
 ];
 
 const SHIFT_LIST = [
@@ -1216,6 +1263,7 @@ async function openCreateRequestModal(d, m, y) {
   const cModal = document.getElementById("createRequestModal");
   const cTitle = document.getElementById("createModalTitle");
   const typeSelect = document.getElementById("requestTypeSelect");
+  const deptSelect = document.getElementById("requestDepartmentSelect");
   const dynamicFields = document.getElementById("dynamicFields");
   const approverSelect = document.getElementById("approverSelect");
   const statusDiv = document.getElementById("createStatus");
@@ -1226,6 +1274,18 @@ async function openCreateRequestModal(d, m, y) {
 
   cTitle.innerText = `Tạo đơn - ${dateStr}`;
   statusDiv.style.display = "none";
+
+  // Populate departments
+  const userDeptID = currentData.userMeta?.DepartmentID;
+  const userDeptName = currentData.userMeta?.DepartmentName;
+
+  deptSelect.innerHTML = DEPARTMENT_LIST.map(dept => {
+    // Match by ID OR by Name (case insensitive)
+    const isSelected = (userDeptID === dept.id) ||
+      (userDeptName && userDeptName.toLowerCase() === dept.name.toLowerCase());
+    return `<option value="${dept.id}" ${isSelected ? 'selected' : ''}>${dept.name}</option>`;
+  }).join('');
+
   submitBtn.disabled = true;
   submitBtn.innerHTML = '<span class="icon">⏳</span> Đang tải...';
 
@@ -1411,6 +1471,8 @@ async function openCreateRequestModal(d, m, y) {
       const reason = document.getElementById("requestReason").value;
       const place = document.getElementById("requestPlace").value;
       const approver = approverSelect.value;
+      const selectedDeptID = document.getElementById("requestDepartmentSelect").value;
+      const selectedDept = DEPARTMENT_LIST.find(d => d.id === selectedDeptID);
       const isSeri = document.getElementById("isSeri").checked ? "1" : "0";
 
       const running = String(Number(currentKeyData.LastKey) + 1).padStart(4, "0");
@@ -1429,7 +1491,7 @@ async function openCreateRequestModal(d, m, y) {
         ApplicationID: "7," + appID,
         AbsentTypeID: "7,", // Default
         Description: "12," + desc,
-        DepartmentID: "7," + (currentData.userMeta.DepartmentID || ""),
+        DepartmentID: "7," + selectedDeptID,
         SectionID: "7,", SubsectionID: "7,", ProcessID: "7,",
         EmployeeName: "7," + (currentData.userMeta.FullName || ""),
 
@@ -1444,7 +1506,7 @@ async function openCreateRequestModal(d, m, y) {
         DaysRemained: "8,0.0", OTDaysRemained: "8,0.0", UseVehicle: "7,",
         APK: "1,", APKDetail: "1,", FromToDate: "9,",
         DivisionID: "7," + (currentData.userMeta.DivisionID || ""),
-        DepartmentName: "7," + (currentData.userMeta.DepartmentName || ""),
+        DepartmentName: "7," + (selectedDept ? selectedDept.name : ""),
         SectionName: "7,", SubsectionName: "7,", ProcessName: "7,",
         EmployeeID: "7," + (currentData.userMeta.EmployeeID || ""),
         CreateUserID: "7,", CreateDate: "9,", LastModifyUserID: "7,", LastModifyDate: "9,",
@@ -1494,7 +1556,24 @@ async function openCreateRequestModal(d, m, y) {
         baseData.ShiftID = "9," + document.getElementById("newShiftID").value;
       }
 
-      const res = await submitVoucher({ dataScreen: [[baseData]], voucherPackages: [] });
+      let res = await submitVoucher({ dataScreen: [[baseData]], voucherPackages: [] });
+
+      // Retry logic if duplicate ID
+      if (res.Status === 1 && res.Message && res.Message.includes("ApplicationID")) {
+        console.warn("[Submission] Duplicate ID detected, retrying with new key...");
+        const newKeyData = await getNewVoucherKey(type);
+        if (newKeyData && newKeyData.LastKey) {
+          const newRunning = String(Number(newKeyData.LastKey) + 1).padStart(4, "0");
+          const newAppID = `${prefix}/${mmStr}/${shortYear}/${newRunning}`;
+
+          baseData.ApplicationID = "7," + newAppID;
+          baseData.LastKey = "7," + newKeyData.LastKey;
+          baseData.LastKeyAPK = "7," + newKeyData.LastKeyAPK;
+
+          res = await submitVoucher({ dataScreen: [[baseData]], voucherPackages: [] });
+        }
+      }
+
       if (res.Status === 0 || res.UpdateSuccess) {
         statusDiv.innerText = "Gửi đơn thành công!";
         statusDiv.className = "status-box success";
@@ -1540,12 +1619,12 @@ document.querySelectorAll('.theme-selector button').forEach(btn => {
 
 header.onmousedown = (e) => {
   if (e.target.closest('.zoom-controls')) return;
+  root.classList.add('dragging');
   let sX = e.clientX, sY = e.clientY, iX = root.offsetLeft, iY = root.offsetTop;
   document.onmousemove = (e) => {
     let nX = iX + (e.clientX - sX);
     let nY = iY + (e.clientY - sY);
 
-    // Safe margin so it's never completely stuck
     const margin = 20;
     const maxLeft = window.innerWidth - (root.offsetWidth * currentZoom) + (margin * currentZoom);
     const maxTop = window.innerHeight - (root.offsetHeight * currentZoom) + (margin * currentZoom);
@@ -1553,19 +1632,27 @@ header.onmousedown = (e) => {
     root.style.left = `${Math.max(-margin, Math.min(nX, maxLeft))}px`;
     root.style.top = `${Math.max(-margin, Math.min(nY, maxTop))}px`;
   };
-  document.onmouseup = () => { document.onmousemove = null; saveConfig(); };
+  document.onmouseup = () => {
+    document.onmousemove = null;
+    root.classList.remove('dragging');
+    saveConfig();
+  };
 };
 
 resize.onmousedown = (e) => {
+  root.classList.add('resizing');
   let sX = e.clientX, sY = e.clientY, iW = root.clientWidth, iH = root.clientHeight;
   document.onmousemove = (e) => {
-    // When zoomed, the delta must be divided by the zoom factor
     let newW = iW + (e.clientX - sX) / currentZoom;
     let newH = iH + (e.clientY - sY) / currentZoom;
     root.style.width = `${Math.max(480, newW)}px`;
-    root.style.height = `${Math.max(300, newH)}px`;
+    root.style.height = `${Math.max(380, newH)}px`;
   };
-  document.onmouseup = () => { document.onmousemove = null; saveConfig(); };
+  document.onmouseup = () => {
+    document.onmousemove = null;
+    root.classList.remove('resizing');
+    saveConfig();
+  };
   e.stopPropagation(); e.preventDefault();
 };
 
@@ -1648,5 +1735,14 @@ document.getElementById("closeBtn").onclick = () => app.remove();
 // Initialize: Load server config then load data
 loadServerConfig().then(() => {
   SELECTED_MONTH = formatMonth(new Date());
+
+  // Ensure responsive on first run or window resize
+  const ensureBounds = () => {
+    if (root.offsetWidth > window.innerWidth) root.style.width = '95vw';
+    if (root.offsetHeight > window.innerHeight) root.style.height = '90vh';
+  };
+  window.addEventListener('resize', ensureBounds);
+  ensureBounds();
+
   load(); // Auto load on startup
 });
