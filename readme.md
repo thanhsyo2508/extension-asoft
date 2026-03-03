@@ -13,7 +13,7 @@
 ## 📽️ Video Demo Trải Nghiệm
 Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông qua video dưới đây:
 
-![Demo Video](attendance-extension/video/demo.mp4)
+![Demo Video](attendance-extension/video/demo.gif)
 
 *(Nếu bạn không xem được video, hãy [nhấn vào đây](attendance-extension/video/demo.mp4) để tải hoặc xem trực tiếp)*
 
