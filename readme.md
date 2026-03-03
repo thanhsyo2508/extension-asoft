@@ -10,6 +10,13 @@
 
 ---
 
+# Tải về extension
+
+---
+[Tải về asoft-attendance-v2.0.zip](asoft-attendance-v2.0.zip)
+
+---
+
 ## 📽️ Video Demo Trải Nghiệm
 Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông qua video dưới đây:
 
