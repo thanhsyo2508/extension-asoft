@@ -89,17 +89,26 @@ app.innerHTML = `
 
   <div class="dashboard-grid">
     <div class="stats-panel">
-      <div class="stat-card">
-        <span class="stat-label">Ngày công</span>
-        <span class="stat-value" id="statWorkDays">0</span>
+      <div class="stat-card" data-type="work">
+        <div class="stat-icon">💼</div>
+        <div class="stat-info">
+          <span class="stat-label">Ngày công</span>
+          <span class="stat-value" id="statWorkDays">0</span>
+        </div>
       </div>
-      <div class="stat-card">
-        <span class="stat-label">Đi trễ</span>
-        <span class="stat-value warning" id="statLate">0</span>
+      <div class="stat-card" data-type="late">
+        <div class="stat-icon yellow">⚠️</div>
+        <div class="stat-info">
+          <span class="stat-label">Đi trễ</span>
+          <span class="stat-value warning" id="statLate">0</span>
+        </div>
       </div>
-      <div class="stat-card">
-        <span class="stat-label">Về sớm</span>
-        <span class="stat-value danger" id="statEarly">0</span>
+      <div class="stat-card" data-type="early">
+        <div class="stat-icon red">🏃</div>
+        <div class="stat-info">
+          <span class="stat-label">Về sớm</span>
+          <span class="stat-value danger" id="statEarly">0</span>
+        </div>
       </div>
     </div>
 
@@ -385,15 +394,39 @@ style.innerHTML = `
 #glassRoot.size-small .icon, #glassRoot.size-medium .icon { font-size: 10px; }
 #glassRoot.size-small .weekday, #glassRoot.size-medium .weekday { padding: 4px; font-size: 10px; }
 
-.stats-panel { display: flex; flex-direction: column; gap: 12px; }
+.stats-panel { display: flex; flex-direction: column; gap: 16px; }
 .stat-card {
   background: var(--card-bg); border: 1px solid var(--border-glass);
-  padding: 12px 16px; border-radius: 14px;
-  display: flex; flex-direction: column; gap: 2px;
-  cursor: pointer; transition: all 0.2s;
+  padding: 16px; border-radius: 18px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative; overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-.stat-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.1); }
-.stat-card.active { border-color: var(--accent); background: rgba(59, 130, 246, 0.2); }
+.stat-card:hover { 
+  transform: translateY(-4px) scale(1.02); 
+  background: rgba(255,255,255,0.12); 
+  border-color: var(--primary);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+}
+.stat-card.active { border-color: var(--accent); background: rgba(59, 130, 246, 0.25); box-shadow: 0 0 20px var(--primary-glow); }
+
+.stat-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; border: 1px solid var(--border-glass);
+  transition: all 0.3s;
+}
+.stat-icon.yellow { color: #f59e0b; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); }
+.stat-icon.red { color: #ef4444; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); }
+.stat-card:hover .stat-icon { transform: rotate(10deg) scale(1.1); background: rgba(255,255,255,0.1); }
+
+.stat-info { display: flex; flex-direction: column; gap: 2px; }
+.stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); opacity: 0.8; }
+.stat-value { font-size: 24px; font-weight: 800; color: var(--text-main); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat-value.warning { color: #fbbf24; }
+.stat-value.danger { color: #f87171; }
 
 .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: var(--card-bg); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border-glass); }
 .month-nav { display: flex; align-items: center; gap: 10px; }
