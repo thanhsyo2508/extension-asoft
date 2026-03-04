@@ -1851,6 +1851,14 @@ document.getElementById("closeBtn").onclick = () => app.remove();
 loadServerConfig().then(() => {
   SELECTED_MONTH = formatMonth(new Date());
 
+  // Auto fetch previous month period
+  const prevDate = new Date();
+  prevDate.setMonth(prevDate.getMonth() - 1);
+  const prevMonthStr = formatMonth(prevDate);
+  fetchPeriodDates(prevMonthStr).then(dates => {
+    if (dates) fetchPeriodUpdate(prevMonthStr, dates);
+  });
+
   // Ensure responsive on first run or window resize
   const ensureBounds = () => {
     if (root.offsetWidth > window.innerWidth) root.style.width = '95vw';
