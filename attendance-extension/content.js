@@ -110,6 +110,20 @@ app.innerHTML = `
           <span class="stat-value danger" id="statEarly">0</span>
         </div>
       </div>
+      <div class="stat-card" data-type="ot150">
+        <div class="stat-icon purple">🚀</div>
+        <div class="stat-info">
+          <span class="stat-label">OT 150%</span>
+          <span class="stat-value" id="statOT150">0h</span>
+        </div>
+      </div>
+      <div class="stat-card" data-type="ot200">
+        <div class="stat-icon purple" style="filter: hue-rotate(45deg);">🔥</div>
+        <div class="stat-info">
+          <span class="stat-label">OT 200%</span>
+          <span class="stat-value" id="statOT200">0h</span>
+        </div>
+      </div>
     </div>
 
     <div class="main-content">
@@ -443,8 +457,9 @@ style.innerHTML = `
   font-size: 22px; border: 1px solid var(--border-glass);
   transition: all 0.3s;
 }
-.stat-icon.yellow { color: #f59e0b; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); }
-.stat-icon.red { color: #ef4444; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); }
+  .stat-icon.yellow { color: #f59e0b; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); }
+  .stat-icon.red { color: #ef4444; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); }
+  .stat-icon.purple { color: #a855f7; background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.2); }
 .stat-card:hover .stat-icon { transform: rotate(10deg) scale(1.1); background: rgba(255,255,255,0.1); }
 
 .stat-info { display: flex; flex-direction: column; gap: 2px; }
@@ -792,6 +807,31 @@ async function fetchShift(monthStr) {
   } catch (e) { return { Data: [] }; }
 }
 
+async function fetchOT(monthStr) {
+  const [y, m] = monthStr.split("-");
+  const lastDay = new Date(y, m, 0).getDate();
+  const body = new URLSearchParams();
+  body.append("page", "1");
+  body.append("pageSize", "200");
+  body.append("args[0].Key", "ftype[]");
+  body.append("args[0].Value[0]", "5");
+  body.append("args[1].Key", "dttype[]");
+  body.append("args[1].Value[0]", "13");
+  body.append("args[2].Key", "key[]");
+  body.append("args[2].Value[0]", "FromDatePeriodControl");
+  body.append("args[3].Key", "value[]");
+  body.append("args[3].Value[0]", `01/${m}/${y}`);
+  body.append("args[3].Value[1]", `${lastDay}/${m}/${y}`);
+  body.append("args[4].Key", "systemInfo[]");
+  body.append("args[4].Value[0]", "HRMF2320");
+  body.append("args[4].Value[1]", "HRM");
+  body.append("args[4].Value[2]", "HRMT2320");
+
+  try {
+    return await api("/GridCommon/Read?TableName=HRMT2320", body, false);
+  } catch (e) { return { Data: [] }; }
+}
+
 async function fetchLeaveRequests(monthStr) {
   const [y, m] = monthStr.split("-");
   const lastDay = new Date(y, m, 0).getDate();
@@ -1041,15 +1081,15 @@ function toggleStatHighlight(type) {
 }
 // Add data-types to stat cards
 document.querySelectorAll('.stat-card').forEach((card, idx) => {
-  const types = ['work', 'late', 'early'];
+  const types = ['work', 'late', 'early', 'ot150', 'ot200'];
   card.dataset.type = types[idx];
   card.onclick = () => toggleStatHighlight(types[idx]);
 });
 
 /* ========= DATA PROCESSING ========= */
-let currentData = { map: {}, shiftMap: {}, requestMap: {}, stats: {} };
+let currentData = { map: {}, shiftMap: {}, requestMap: {}, stats: {}, currentMonthOT: null };
 
-async function processData(attendanceData, shiftData, leaveData) {
+async function processData(attendanceData, shiftData, leaveData, otData = null) {
   const map = {}, shiftMap = {}, requestMap = {};
   let late = 0, early = 0;
 
@@ -1113,7 +1153,21 @@ async function processData(attendanceData, shiftData, leaveData) {
     DepartmentName: userSource.DepartmentName || ""
   } : null;
 
-  currentData = { map, shiftMap, requestMap, userMeta, stats: { workDays: Object.keys(map).length, late, early } };
+  let ot150 = 0, ot200 = 0;
+  if (otData && otData.Data && otData.Data.length > 0) {
+    const r = otData.Data[0];
+    Object.keys(r).forEach(key => {
+      if (key.startsWith("OT") && typeof r[key] === "number") {
+        if (key === "OTT15") {
+          ot150 += r[key];
+        } else {
+          ot200 += r[key];
+        }
+      }
+    });
+  }
+
+  currentData = { map, shiftMap, requestMap, userMeta, stats: { workDays: Object.keys(map).length, late, early, ot150, ot200 }, currentMonthOT: otData };
   return currentData;
 }
 
@@ -1132,6 +1186,8 @@ function render(monthStr) {
   document.getElementById("statWorkDays").innerText = stats.workDays;
   document.getElementById("statLate").innerText = stats.late;
   document.getElementById("statEarly").innerText = stats.early;
+  document.getElementById("statOT150").innerText = stats.ot150 + "h";
+  document.getElementById("statOT200").innerText = stats.ot200 + "h";
   document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
 
   const firstDay = (new Date(y, m - 1, 1).getDay() + 6) % 7;
@@ -1816,13 +1872,14 @@ async function load() {
     }
 
     // Step 3: Fetch attendance and other data
-    const [att, shift, leave] = await Promise.all([
+    const [att, shift, leave, otData] = await Promise.all([
       fetchAttendance(SELECTED_MONTH),
       fetchShift(SELECTED_MONTH),
-      fetchLeaveRequests(SELECTED_MONTH)
+      fetchLeaveRequests(SELECTED_MONTH),
+      fetchOT(SELECTED_MONTH)
     ]);
-    console.log("Debug Data:", { att, shift, leave });
-    await processData(att, shift, leave);
+    console.log("Debug Data:", { att, shift, leave, otData });
+    await processData(att, shift, leave, otData);
     render(SELECTED_MONTH);
   } catch (err) {
     console.error("Load Error:", err);
