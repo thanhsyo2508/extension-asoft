@@ -681,7 +681,7 @@ const DEPARTMENT_LIST = [
   { id: "MDT", name: "Xưởng Gia công" },
   { id: "PO", name: "Mua hàng" },
   { id: "QC", name: "Phòng kiểm tra chất lượng - QC" },
-  { id: "RNDS", name: "R&D S" },
+  { id: "IOT", name: "IoT" },
   { id: "SALE", name: "Kinh doanh" },
   { id: "TKCK", name: "Thiết kế cơ khí" },
   { id: "TKD", name: "Thiết kế điện" },
@@ -725,6 +725,26 @@ const UTILS = {
   generateHours: () => Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')),
   generateMinutes: () => ['00', '15', '30', '45']
 };
+
+/* ========= WORKDAY HELPER ========= */
+// Hybrid: ngày đã qua → tin HRMT2323 (shiftMap), ngày tương lai → weekday heuristic
+// Lịch làm: T2-T6 luôn làm, chỉ T7 ĐẦU THÁNG (d<=7) mới làm, CN luôn nghỉ
+function isWorkday(dayNum, monthNum, yearNum) {
+  const dateObj = new Date(yearNum, monthNum - 1, dayNum);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (dateObj <= today) {
+    // Ngày đã qua hoặc hôm nay: dùng dữ liệu thực từ HRMT2323
+    return !!currentData.shiftMap[dayNum];
+  }
+
+  // Ngày tương lai: dùng weekday heuristic
+  const dow = dateObj.getDay(); // 0=CN, 6=T7
+  if (dow === 0) return false;           // CN → luôn nghỉ
+  if (dow === 6) return dayNum <= 7;     // Chỉ T7 đầu tháng (tuần 1) mới làm
+  return true;                           // T2-T6 → luôn làm
+}
 
 async function fetchPeriodDates(monthStr) {
   const [y, m] = monthStr.split("-");
@@ -1202,14 +1222,18 @@ function render(monthStr) {
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const cellDate = new Date(y, m - 1, d);
+    const isFutureDay = cellDate > todayMidnight;
     const isToday = today.getDate() === d && today.getMonth() === m - 1 && today.getFullYear() === y;
     const isWeekend = [0, 6].includes(new Date(y, m - 1, d).getDay());
     const recs = map[d] || [];
     const hasData = recs.length > 0;
     const hasFullData = recs.length >= 2;
-    const hasShift = !!shiftMap[d];
+    const hasShift = isWorkday(d, m, y);
 
-    const isAbsent = hasShift && !hasData;
+    // Chỉ đánh "Nghỉ" với ngày đã qua/hôm nay — tương lai chưa đến không tính
+    const isAbsent = hasShift && !hasData && !isFutureDay;
     const isForgot = hasData && !hasFullData;
     const requests = requestMap[d] || [];
     const hasPending = requests.some(r => r.status !== "Duyệt");
@@ -1332,7 +1356,7 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
 
   // --- SMART SUGGESTION LOGIC ---
   let suggested = { type: "DXNP", hours: 8, reason: "", startTime: "08:15", endTime: "17:30", swipeTime: "08:00", inOut: "V" };
-  const hasShift = !!currentData.shiftMap[d];
+  const hasShift = isWorkday(d, m, y);
   const sortedTimes = [...(attendanceTimes || [])].sort();
   let timeCount = sortedTimes.length;
 
@@ -1457,19 +1481,28 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
       const hiddenInput = document.getElementById("approverSelect");
       const resultsDiv = document.getElementById("approverResults");
 
+      // --- AUTO-FILL APPROVER từ storage (theo tài khoản đăng nhập) ---
+      const empID = currentData.userMeta?.EmployeeID || 'default';
+      const approverKey = `asoft-approver-${empID}`;
+      const savedApprover = await new Promise(res =>
+        chrome.storage.sync.get([approverKey], r => res(r[approverKey] || null))
+      );
+
       const renderApprovers = (list) => {
         resultsDiv.innerHTML = (list || []).filter(a => a.EmployeeID).map(a =>
-          `<div class="approver-item" data-id="${a.EmployeeID}">${a.FullName} <span>(${a.EmployeeID})</span></div>`
+          `<div class="approver-item" data-id="${a.EmployeeID}" data-name="${a.FullName}">${a.FullName} <span>(${a.EmployeeID})</span></div>`
         ).join('') || '<div class="approver-item" style="cursor: default; opacity: 0.6;">Không tìm thấy</div>';
 
         resultsDiv.querySelectorAll(".approver-item").forEach(item => {
           item.onclick = (e) => {
             const id = item.dataset.id;
-            const name = item.innerText.split('(')[0].trim();
+            const name = item.dataset.name || item.innerText.split('(')[0].trim();
             if (id) {
               hiddenInput.value = id;
               searchInput.value = `${name} (${id})`;
               resultsDiv.style.display = "none";
+              // Lưu approver theo EmployeeID của người dùng hiện tại
+              chrome.storage.sync.set({ [approverKey]: { id, name } });
             }
             e.stopPropagation();
           };
@@ -1496,7 +1529,13 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
 
       renderApprovers(approvers || []);
 
-      const shiftAuto = (currentShift || "").trim() || currentData.shiftMap[d] || "";
+      // Auto-fill nếu có approver đã lưu
+      if (savedApprover?.id && !hiddenInput.value) {
+        hiddenInput.value = savedApprover.id;
+        searchInput.value = `${savedApprover.name} (${savedApprover.id})`;
+      }
+
+      const shiftAuto = (currentShift || "").trim() || currentData.shiftMap[d] || "CA01 - 08:00";
       typeSelect.dataset.shift = shiftAuto;
 
       submitBtn.disabled = false;
@@ -1539,7 +1578,11 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
           <div class="form-group"><label class="req-label">Số giờ</label><input type="number" id="dailyHours" class="form-control" value="${suggested.hours || 8}" step="0.5"></div>
         </div>
         <div class="form-row-req">
-          <div class="form-group"><label class="req-label">Ca hiện tại</label><input type="text" id="shiftID" class="form-control" value="${shift}" readonly></div>
+          <div class="form-group"><label class="req-label">Ca làm việc</label>
+            <select id="shiftID" class="form-control">
+              ${SHIFT_LIST.map(s => `<option value="${s.id}" ${shift === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
+            </select>
+          </div>
         </div>`;
     } else if (type === "DXLTG") {
       const [fH, fM] = (suggested.startTime || "16:45").split(":");
@@ -1558,8 +1601,14 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
           </div>
         </div>
         <div class="form-row-req">
-          <div class="form-group"><label class="req-label">Ca hiện tại</label><input type="text" id="shiftID" class="form-control" value="${shift}" readonly></div>
+          <div class="form-group"><label class="req-label">Ca làm việc</label>
+            <select id="shiftID" class="form-control">
+              <option value="">-- Chọn ca --</option>
+              ${SHIFT_LIST.map(s => `<option value="${s.id}" ${shift === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
+            </select>
+          </div>
         </div>`;
+
     } else if (type === "DXBSQT") {
       const [sH, sM] = (suggested.swipeTime || "08:00").split(":");
       fieldsHtml = `
@@ -1577,7 +1626,12 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
           </div>
         </div>
         <div class="form-row-req">
-          <div class="form-group"><label class="req-label">Ca hiện tại</label><input type="text" id="shiftID" class="form-control" value="${shift}" readonly></div>
+          <div class="form-group"><label class="req-label">Ca làm việc</label>
+            <select id="shiftID" class="form-control">
+              <option value="">-- Chọn ca --</option>
+              ${SHIFT_LIST.map(s => `<option value="${s.id}" ${shift === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
+            </select>
+          </div>
         </div>`;
     } else if (type === "DXRN") {
       fieldsHtml = `
@@ -1604,7 +1658,11 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
           </div>
         </div>
         <div class="form-row-req">
-          <div class="form-group"><label class="req-label">Ca cũ</label><input type="text" id="shiftID" class="form-control" value="${shift}" readonly></div>
+          <div class="form-group"><label class="req-label">Ca cũ</label>
+            <select id="shiftID" class="form-control">
+              ${SHIFT_LIST.map(s => `<option value="${s.id}" ${shift === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
+            </select>
+          </div>
         </div>`;
     }
     dynamicFields.innerHTML = fieldsHtml;

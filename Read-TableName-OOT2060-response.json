@@ -1,0 +1,42 @@
+{
+    "Data": [
+        {
+            "RowNum": 1,
+            "TotalRow": 1,
+            "APK": "736145F1-18EE-4791-A679-0158892AA58C",
+            "TranMonth": 4,
+            "TranYear": 2026,
+            "DivisionID": "MA",
+            "EmployeeID": "000174",
+            "EmployeeName": "Nguyễn Văn Thanh",
+            "DepartmentID": "IOT",
+            "SectionID": "",
+            "SubsectionID": null,
+            "ProcessID": null,
+            "DepartmentName": "IoT",
+            "SectionName": null,
+            "SubsectionName": null,
+            "ProcessName": null,
+            "Date": "/Date(1776099600000)/",
+            "ShiftID": "CA01-08:00",
+            "BeginTime": null,
+            "EndTime": null,
+            "Status": 0,
+            "StatusName": "Chưa xử lý",
+            "JugdeUnusualType": "BT0003",
+            "JugdeUnusualTypeID": "Bỏ làm",
+            "Fact": "BT0003",
+            "FactName": "Bỏ làm",
+            "HandleMethod": "DXP",
+            "IOCode": null,
+            "IOName": null,
+            "IsApproved": 0,
+            "AbsentDate": "/Date(1776099600000)/",
+            "StandardBeginTime": null,
+            "StandardEndTime": null
+        }
+    ],
+    "Total": 1,
+    "AggregateResults": null,
+    "Errors": null
+}
