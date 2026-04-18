@@ -649,6 +649,15 @@ select.form-control option { background: var(--bg-glass); color: var(--text-main
 
 /* Global Cursor pointers */
 button, .nav-btn, .mp-month-btn, .mp-today-btn, .theme-selector button, .month-display, .modal-header button { cursor: pointer !important; }
+
+/* DRAG & DROP BÙ PHÉP */
+.day.ot-day { cursor: grab; }
+.day.ot-day:active { cursor: grabbing; }
+.day.drag-source { opacity: 0.45; outline: 2px dashed #8b5cf6; outline-offset: -2px; cursor: grabbing !important; }
+.day.drag-over { border: 2px solid var(--primary) !important; background: rgba(16,185,129,0.18) !important; transform: scale(1.04); box-shadow: 0 0 16px var(--primary-glow); }
+.day.drag-valid { outline: 1px dashed var(--primary); outline-offset: -2px; }
+.cs-card { background: rgba(255,255,255,0.03); border-radius: 14px; padding: 16px; }
+.cs-info-banner { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius: 12px; padding: 14px 16px; display: flex; gap: 14px; align-items: center; font-size: 13px; }
 `;
 document.head.appendChild(style);
 
@@ -925,7 +934,7 @@ async function submitVoucher(data) {
   } catch (e) { console.error("Submit Error:", e); return { Status: 1, Message: e.message }; }
 }
 
-async function deleteRequest(apk) {
+async function deleteRequest(apk, day, month, year) {
   if (!confirm("Bạn có chắc chắn muốn xóa đơn này?")) return;
   const body = new URLSearchParams();
   body.append("dt", `${apk},MA,`);
@@ -941,6 +950,20 @@ async function deleteRequest(apk) {
       res.UpdateSuccess;
 
     if (isSuccess) {
+      // Xóa liên kết bù phép (bpLinks) nếu ngày này thuộc một cặp NP↔BN
+      if (day && month && year) {
+        const empID = currentData.userMeta?.EmployeeID || 'default';
+        const bpKey = `asoft-bp-links-${empID}`;
+        const links = await new Promise(r => chrome.storage.sync.get([bpKey], s => r(s[bpKey] || [])));
+        const filtered = links.filter(l =>
+          !(l.npDay === day && l.npMonth === month && l.npYear === year) &&
+          !(l.bnDay === day && l.bnMonth === month && l.bnYear === year)
+        );
+        if (filtered.length !== links.length) {
+          await new Promise(r => chrome.storage.sync.set({ [bpKey]: filtered }, r));
+          console.log(`[BP] Đã xóa liên kết bù phép cho ngày ${day}/${month}/${year}`);
+        }
+      }
       alert("Xóa đơn thành công!");
       document.getElementById("detailModal").style.display = "none";
       load();
@@ -1108,6 +1131,7 @@ document.querySelectorAll('.stat-card').forEach((card, idx) => {
 
 /* ========= DATA PROCESSING ========= */
 let currentData = { map: {}, shiftMap: {}, requestMap: {}, stats: {}, currentMonthOT: null };
+let dragSourceDay = null; // { d, m, y, times } — trạng thái drag bù phép
 
 async function processData(attendanceData, shiftData, leaveData, otData = null) {
   const map = {}, shiftMap = {}, requestMap = {};
@@ -1254,6 +1278,48 @@ function render(monthStr) {
     if (isWeekend) cell.classList.add('weekend-date'); // Thêm class để track weekend nếu cần
     cell.onclick = () => openModal(d, m, y, map[d], requests);
 
+    // === DRAG SOURCE: ngày OT (làm việc vào ngày nghỉ) ===
+    if (isOTDay) {
+      cell.draggable = true;
+      cell.title = '🔄 Kéo vào ngày nghỉ phép để tạo đơn bù phép';
+      cell.addEventListener('dragstart', (ev) => {
+        dragSourceDay = { d, m, y, times: [...recs] };
+        setTimeout(() => cell.classList.add('drag-source'), 0);
+        ev.dataTransfer.effectAllowed = 'move';
+        ev.dataTransfer.setData('text/plain', `${d}`);
+      });
+      cell.addEventListener('dragend', () => {
+        cell.classList.remove('drag-source');
+        document.querySelectorAll('.day.drag-over').forEach(el => el.classList.remove('drag-over'));
+        dragSourceDay = null;
+      });
+    }
+
+    // === DRAG TARGET: ch? ngày ngh? (có ca nhưng chưa có chấm công) ===
+    if (hasShift && !hasData && !isOTDay) {
+      cell.addEventListener('dragenter', (ev) => {
+        if (!dragSourceDay) return;
+        ev.preventDefault();
+        cell.classList.add('drag-over');
+      });
+      cell.addEventListener('dragover', (ev) => {
+        if (!dragSourceDay) return;
+        ev.preventDefault();
+        ev.dataTransfer.dropEffect = 'move';
+      });
+      cell.addEventListener('dragleave', (ev) => {
+        if (!cell.contains(ev.relatedTarget)) cell.classList.remove('drag-over');
+      });
+      cell.addEventListener('drop', (ev) => {
+        ev.preventDefault();
+        cell.classList.remove('drag-over');
+        if (!dragSourceDay) return;
+        const src = { ...dragSourceDay };
+        dragSourceDay = null;
+        openCompSwapModal(src, { d, m, y });
+      });
+    }
+
     let html = `<div class="day-num">${d}</div><div class="time-box">`;
     if (hasData) {
       const sorted = [...recs].sort();
@@ -1282,9 +1348,26 @@ function render(monthStr) {
       }
     }
 
+    // === BP-LINK BADGES ===
+    const bpLinks = currentData.bpLinks || [];
+    const npLink = bpLinks.find(l => l.npDay === d && l.npMonth === m && l.npYear === y);
+    const bnLink = bpLinks.find(l => l.bnDay === d && l.bnMonth === m && l.bnYear === y);
+    if (npLink) {
+      html += `<div class="time-tag req" style="font-size:10px; gap:3px;">&#8644; Bù: ${npLink.bnDate}</div>`;
+      cell.dataset.bpId   = npLink.pairId;
+      cell.dataset.bpRole = 'np';
+    }
+    if (bnLink) {
+      html += `<div class="time-tag normal" style="font-size:10px; gap:3px;">&#8644; Nghỉ: ${bnLink.npDate}</div>`;
+      cell.dataset.bpId   = bnLink.pairId;
+      cell.dataset.bpRole = 'bn';
+    }
+
     cell.innerHTML = html + `</div>`;
     cal.appendChild(cell);
   }
+  // Vẽ mũi tên sau khi render xong
+  drawBPArrows(m, y);
 }
 
 /* ========= MODAL LOGIC ========= */
@@ -1313,7 +1396,7 @@ function openModal(d, m, y, times, requests) {
                     <div class="req-field"><span class="req-label">Lý do</span><span class="req-val">${r.reason}</span></div>
                     <div class="req-field"><span class="req-label">Ca</span><span class="req-val">${r.shift}</span></div>
                 </div>
-                ${isPending ? `<button class="btn-delete" data-apk="${r.apk}"><span class="icon">🗑️</span> Xóa đơn</button>` : ''}
+                ${isPending ? `<button class="btn-delete" data-apk="${r.apk}" data-day="${d}" data-month="${m}" data-year="${y}"><span class="icon">🗑️</span> Xóa đơn</button>` : ''}
             </div>`;
     });
   }
@@ -1322,7 +1405,7 @@ function openModal(d, m, y, times, requests) {
 
   // Gắn sự kiện xóa đơn (Tránh lỗi ReferenceError trong content script)
   mBody.querySelectorAll(".btn-delete").forEach(btn => {
-    btn.onclick = () => deleteRequest(btn.dataset.apk);
+    btn.onclick = () => deleteRequest(btn.dataset.apk, Number(btn.dataset.day), Number(btn.dataset.month), Number(btn.dataset.year));
   });
 
   // Event for "Create New" button in HEADER
@@ -1821,6 +1904,352 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
   };
 }
 
+/* ========= COMP SWAP MODAL (BÙ PHÉP) ========= */
+async function openCompSwapModal(srcDay, tgtDay) {
+  const fmt = (d, m, y) => `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
+  const srcDate = fmt(srcDay.d, srcDay.m, srcDay.y);
+  const tgtDate = fmt(tgtDay.d, tgtDay.m, tgtDay.y);
+  const shiftDefault = 'CA01 - 08:00';
+  const shiftTgt = currentData.shiftMap[tgtDay.d] || shiftDefault;
+  const shiftSrc = currentData.shiftMap[srcDay.d] || shiftDefault;
+  const empID = currentData.userMeta?.EmployeeID || 'default';
+  const approverKey = `asoft-approver-${empID}`;
+  // Tạo pairId sớm để nhúng vào lý do đơn ngay từ đầu
+  const pairId = `bp_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+
+  let modal = document.getElementById('compSwapModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'compSwapModal';
+    modal.className = 'modal-overlay';
+    modal.style.cssText = 'z-index: 1000002;';
+    document.getElementById('attendance-ext').appendChild(modal);
+  }
+  modal.style.display = 'flex';
+
+  modal.innerHTML = `
+  <div class="modal-content" style="width:100%; max-width:700px; max-height:92vh; overflow-y:auto;">
+    <div class="modal-header">
+      <div class="modal-header-title">
+        <h2>🔄 Đơn bù phép</h2>
+        <span style="font-size:12px; color:var(--text-muted); margin-left:8px;">Đi làm bù ${srcDate} → Nghỉ ${tgtDate}</span>
+      </div>
+      <button id="closeCompSwapModal">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="cs-info-banner">
+        <span style="font-size:26px;">🔄</span>
+        <div>
+          <div style="font-weight:700; color:var(--text-main); margin-bottom:4px;">Sẽ tạo đồng thời 2 đơn</div>
+          <div style="color:var(--text-muted); font-size:13px;">
+            <b style="color:var(--warning)">Đơn 1</b>: Nghỉ phép năm ngày <b>${tgtDate}</b>
+            &nbsp;&nbsp;|  
+            <b style="color:var(--primary)">Đơn 2</b>: Làm bù công nhật ngày <b>${srcDate}</b>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="cs-card" style="border-left:4px solid var(--warning);">
+          <h3 style="color:var(--warning); margin:0 0 12px 0; font-size:13px; text-transform:uppercase;">📋 Đơn 1 — Nghỉ phép năm</h3>
+          <div class="req-grid">
+            <div class="req-field"><span class="req-label">Ngày nghỉ</span><span class="req-val" style="color:var(--warning);font-weight:700;">${tgtDate}</span></div>
+            <div class="req-field"><span class="req-label">Loại phép</span><span class="req-val">NP</span></div>
+            <div class="req-field" style="grid-column:span 2;"><span class="req-label">Số giờ</span>
+              <input type="number" id="csHours1" class="form-control" value="8" step="0.5" style="margin-top:4px;">
+            </div>
+            <div class="req-field" style="grid-column:span 2;"><span class="req-label">Ca làm việc</span>
+              <select id="csShift1" class="form-control" style="margin-top:4px;">
+                ${SHIFT_LIST.map(s => `<option value="${s.id}" ${shiftTgt===s.id?'selected':''}>${s.text}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:10px;"><span class="req-label">Lý do</span>
+            <input type="text" id="csReason1" class="form-control" style="margin-top:4px;"
+              value="Nghỉ phép năm ngày ${tgtDate}, làm bù vào ngày ${srcDate} [${pairId}]">
+          </div>
+        </div>
+
+        <div class="cs-card" style="border-left:4px solid var(--primary);">
+          <h3 style="color:var(--primary); margin:0 0 12px 0; font-size:13px; text-transform:uppercase;">📋 Đơn 2 — Làm bù công nhật</h3>
+          <div class="req-grid">
+            <div class="req-field"><span class="req-label">Ngày làm bù</span><span class="req-val" style="color:var(--primary);font-weight:700;">${srcDate}</span></div>
+            <div class="req-field"><span class="req-label">Loại phép</span><span class="req-val">BN</span></div>
+            <div class="req-field" style="grid-column:span 2;"><span class="req-label">Số giờ</span>
+              <input type="number" id="csHours2" class="form-control" value="8" step="0.5" style="margin-top:4px;">
+            </div>
+            <div class="req-field" style="grid-column:span 2;"><span class="req-label">Ca làm việc</span>
+              <select id="csShift2" class="form-control" style="margin-top:4px;">
+                ${SHIFT_LIST.map(s => `<option value="${s.id}" ${shiftSrc===s.id?'selected':''}>${s.text}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:10px;"><span class="req-label">Lý do</span>
+            <input type="text" id="csReason2" class="form-control" style="margin-top:4px;"
+              value="Làm bù công nhật ngày ${srcDate} thay cho ngày nghỉ phép ${tgtDate} [${pairId}]">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="req-label">Người duyệt <span style="color:var(--text-muted); font-size:11px;">(dùng chung cho cả 2 đơn)</span></label>
+        <div class="approver-container">
+          <input type="text" id="csApproverSearch" class="form-control" placeholder="Tìm ID/Tên..." autocomplete="off">
+          <input type="hidden" id="csApproverID" value="">
+          <div id="csApproverResults" class="approver-results"></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="req-label">Phòng ban</label>
+        <select id="csDept" class="form-control">
+          ${DEPARTMENT_LIST.map(dept => {
+            const sel = currentData.userMeta?.DepartmentID === dept.id ||
+              (currentData.userMeta?.DepartmentName || '').toLowerCase() === dept.name.toLowerCase();
+            return `<option value="${dept.id}" ${sel?'selected':''}>${dept.name}</option>`;
+          }).join('')}
+        </select>
+      </div>
+
+      <div id="csStatus" class="status-box" style="display:none;"></div>
+    </div>
+
+    <div style="padding-top:16px; border-top:1px solid var(--border-glass);">
+      <button id="submitCompSwap" class="btn-primary" style="width:100%; justify-content:center; height:44px; font-size:15px;">
+        <span class="icon">🚀</span> Gửi 2 đơn
+      </button>
+    </div>
+  </div>`;
+
+  document.getElementById('closeCompSwapModal').onclick = () => { modal.style.display = 'none'; };
+
+  // --- Load approvers + saved approver ---
+  const [key1, approvers, savedApprover] = await Promise.all([
+    getNewVoucherKey('DXNP'),
+    getApprovePersons('DXNP', currentData.userMeta?.DepartmentID),
+    new Promise(res => chrome.storage.sync.get([approverKey], r => res(r[approverKey] || null)))
+  ]);
+
+  const csSearch = document.getElementById('csApproverSearch');
+  const csHidden = document.getElementById('csApproverID');
+  const csResults = document.getElementById('csApproverResults');
+
+  const renderCSApprovers = (list) => {
+    csResults.innerHTML = (list || []).filter(a => a.EmployeeID).map(a =>
+      `<div class="approver-item" data-id="${a.EmployeeID}" data-name="${a.FullName}">${a.FullName} <span>(${a.EmployeeID})</span></div>`
+    ).join('') || '<div class="approver-item" style="cursor:default;opacity:0.6;">Không tìm thấy</div>';
+
+    csResults.querySelectorAll('.approver-item').forEach(item => {
+      item.onclick = (e) => {
+        const id = item.dataset.id, name = item.dataset.name;
+        if (id) {
+          csHidden.value = id;
+          csSearch.value = `${name} (${id})`;
+          csResults.style.display = 'none';
+          chrome.storage.sync.set({ [approverKey]: { id, name } });
+        }
+        e.stopPropagation();
+      };
+    });
+  };
+
+  csSearch.onfocus = () => { if (approvers?.length) csResults.style.display = 'block'; };
+  csSearch.oninput = (e) => {
+    const q = e.target.value.toLowerCase();
+    renderCSApprovers((approvers||[]).filter(a =>
+      (a.FullName||'').toLowerCase().includes(q) || (a.EmployeeID||'').toLowerCase().includes(q)
+    ));
+    csResults.style.display = 'block';
+  };
+  const closeCSDropdown = (e) => { if (!e.target.closest('#csApproverID, #csApproverSearch, #csApproverResults')) csResults.style.display = 'none'; };
+  window.addEventListener('click', closeCSDropdown);
+
+  renderCSApprovers(approvers || []);
+  if (savedApprover?.id) { csHidden.value = savedApprover.id; csSearch.value = `${savedApprover.name} (${savedApprover.id})`; }
+
+  // --- Submit 2 đơn ---
+  document.getElementById('submitCompSwap').onclick = async () => {
+    const statusDiv = document.getElementById('csStatus');
+    const submitBtn = document.getElementById('submitCompSwap');
+    const approver = csHidden.value;
+    const deptID = document.getElementById('csDept').value;
+    const selectedDept = DEPARTMENT_LIST.find(dep => dep.id === deptID);
+
+    if (!approver) {
+      statusDiv.innerText = '⚠️ Vui lòng chọn người duyệt';
+      statusDiv.className = 'status-box danger'; statusDiv.style.display = 'block'; return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="icon">⏳</span> Đang gửi đơn 1...';
+    statusDiv.style.display = 'none';
+
+    const buildPayload = (day, month, year, absentType, hours, shiftVal, reason, keyData, appID) => {
+      const dateStr = fmt(day, month, year);
+      const mmStr = String(month).padStart(2,'0');
+      return {
+        RequestTypeID:"7,DXP", ApplicationID:"7,"+appID, AbsentTypeID:"7,"+absentType,
+        Description:"12,"+reason, DepartmentID:"7,"+deptID,
+        SectionID:"7,", SubsectionID:"7,", ProcessID:"7,",
+        EmployeeName:"7,"+(currentData.userMeta?.FullName||""),
+        RequestFromDate:"9,"+dateStr, RequestFromDate_DT:"13,",
+        RequestToDate:"9,"+dateStr, RequestToDate_DT:"13,",
+        DailyHours:"8,"+hours, TotalTime:"8,"+hours,
+        OverTime:"8,0.00", OverTimeNN:"8,0.00", OverTimeCompany:"8,0.00",
+        ShiftNow:"9,", ShiftID:"9,"+shiftVal,
+        Reason:"7,"+reason, Date:"13,", InOutID:"7,", Place:"7,", Note:"7,",
+        DaysRemained:"8,0.0", OTDaysRemained:"8,0.0", UseVehicle:"7,",
+        APK:"1,", APKDetail:"1,", FromToDate:"9,",
+        DivisionID:"7,"+(currentData.userMeta?.DivisionID||""),
+        DepartmentName:"7,"+(selectedDept?selectedDept.name:""),
+        SectionName:"7,", SubsectionName:"7,", ProcessName:"7,",
+        EmployeeID:"7,"+(currentData.userMeta?.EmployeeID||""),
+        CreateUserID:"7,", CreateDate:"9,", LastModifyUserID:"7,", LastModifyDate:"9,",
+        LastKey:"7,"+keyData.LastKey, LastKeyAPK:"7,"+keyData.LastKeyAPK,
+        FormStatus:"7,AddNew", Level:"7,", TypeName:"7,DXP",
+        ApproveLevel:"7,1", ApprovingLevel:"7,", Type_9000:"7,",
+        GoStraightName:"7,", ComeStraightName:"7,", AbsentTypeName:"7,", ShiftName:"9,",
+        IsPreShiftOTName:"7,", InOut:"7,", AskForVehicleName:"7,", UseVehicleName:"7,",
+        HaveLunchName:"7,", IsOnTripOTName:"7,", StatusName:"7,",
+        Status:"6,0", ApprovalNotes:"7,", Day:"0,200",
+        ApprovePerson01ID:"7,"+approver,
+        IsSeri:"6,0", GoStraight:"6,0", ComeStraight:"6,0",
+        IsPreShiftOT:"6,0", AskForVehicle:"6,0", HaveLunch:"6,0",
+        IsOnTripOT:"6,0", IsCompen:"6,0"
+      };
+    };
+
+    try {
+      const hours1 = Number(document.getElementById('csHours1').value);
+      const hours2 = Number(document.getElementById('csHours2').value);
+      const shift1 = document.getElementById('csShift1').value;
+      const shift2 = document.getElementById('csShift2').value;
+      const reason1 = document.getElementById('csReason1').value;
+      const reason2 = document.getElementById('csReason2').value;
+
+      // Đơn 1: DXNP-NP cho ngày nghỉ (tgtDay)
+      const mm1 = String(tgtDay.m).padStart(2,'0'), yy1 = String(tgtDay.y).slice(-2);
+      const run1 = String(Number(key1.LastKey)+1).padStart(4,'0');
+      const appID1 = `DXP/${mm1}/${yy1}/${run1}`;
+      const payload1 = buildPayload(tgtDay.d, tgtDay.m, tgtDay.y, 'NP', hours1, shift1, reason1, key1, appID1);
+      let res1 = await submitVoucher({ dataScreen: [[payload1]], voucherPackages: [] });
+
+      if (res1.Status === 1 && res1.Message?.includes('ApplicationID')) {
+        const nk = await getNewVoucherKey('DXNP');
+        const nr = String(Number(nk.LastKey)+1).padStart(4,'0');
+        payload1.ApplicationID = `7,DXP/${mm1}/${yy1}/${nr}`;
+        payload1.LastKey = '7,'+nk.LastKey; payload1.LastKeyAPK = '7,'+nk.LastKeyAPK;
+        res1 = await submitVoucher({ dataScreen: [[payload1]], voucherPackages: [] });
+      }
+
+      if (res1.Status !== 0 && !res1.UpdateSuccess) throw new Error(`Đơn 1 thất bại: ${res1.Message||'Lỗi server'}`);
+
+      // Đơn 2: DXNP-BN cho ngày làm bù (srcDay)
+      submitBtn.innerHTML = '<span class="icon">⏳</span> Đang gửi đơn 2...';
+      const key2 = await getNewVoucherKey('DXNP');
+      const mm2 = String(srcDay.m).padStart(2,'0'), yy2 = String(srcDay.y).slice(-2);
+      const run2 = String(Number(key2.LastKey)+1).padStart(4,'0');
+      const appID2 = `DXP/${mm2}/${yy2}/${run2}`;
+      const payload2 = buildPayload(srcDay.d, srcDay.m, srcDay.y, 'BN', hours2, shift2, reason2, key2, appID2);
+      let res2 = await submitVoucher({ dataScreen: [[payload2]], voucherPackages: [] });
+
+      if (res2.Status === 1 && res2.Message?.includes('ApplicationID')) {
+        const nk2 = await getNewVoucherKey('DXNP');
+        const nr2 = String(Number(nk2.LastKey)+1).padStart(4,'0');
+        payload2.ApplicationID = `7,DXP/${mm2}/${yy2}/${nr2}`;
+        payload2.LastKey = '7,'+nk2.LastKey; payload2.LastKeyAPK = '7,'+nk2.LastKeyAPK;
+        res2 = await submitVoucher({ dataScreen: [[payload2]], voucherPackages: [] });
+      }
+
+      if (res2.Status !== 0 && !res2.UpdateSuccess) {
+        statusDiv.innerText = `⚠️ Đơn 1 thành công! Nhưng đơn 2 thất bại: ${res2.Message||'Lỗi'}. Kiểm tra lại thủ công nhé.`;
+        statusDiv.className = 'status-box danger'; statusDiv.style.display = 'block';
+        submitBtn.disabled = false; submitBtn.innerHTML = '<span class="icon">🚀</span> Gửi 2 đơn'; return;
+      }
+
+      statusDiv.innerText = '✅ Gửi 2 đơn thành công!';
+      statusDiv.className = 'status-box success'; statusDiv.style.display = 'block';
+      window.removeEventListener('click', closeCSDropdown);
+
+      // Lưu pairId để link 2 đơn trên calendar (dùng lại pairId đã tạo từ đầu, khớp với lý do đơn)
+      const bpKey  = `asoft-bp-links-${empID}`;
+      const existLinks = await new Promise(res => chrome.storage.sync.get([bpKey], r => res(r[bpKey] || [])));
+      existLinks.push({
+        pairId,
+        npDate: tgtDate, npDay: tgtDay.d, npMonth: tgtDay.m, npYear: tgtDay.y,
+        bnDate: srcDate, bnDay: srcDay.d, bnMonth: srcDay.m, bnYear: srcDay.y,
+        createdAt: new Date().toISOString()
+      });
+      await new Promise(res => chrome.storage.sync.set({ [bpKey]: existLinks.slice(-60) }, res));
+
+      setTimeout(() => { modal.style.display = 'none'; load(); }, 1500);
+
+    } catch (e) {
+      statusDiv.innerText = 'Lỗi: ' + e.message;
+      statusDiv.className = 'status-box danger'; statusDiv.style.display = 'block';
+      submitBtn.disabled = false; submitBtn.innerHTML = '<span class="icon">🚀</span> Gửi 2 đơn';
+    }
+  };
+}
+
+/* ========= BP ARROWS ========= */
+function drawBPArrows(m, y) {
+  document.getElementById('bp-arrows-svg')?.remove();
+  const bpLinks = currentData.bpLinks || [];
+  const cal = document.getElementById('calendar');
+  if (!cal || !bpLinks.length) return;
+
+  // Lọc các căp thuộc tháng hiện tại
+  const pairs = bpLinks.filter(l =>
+    (l.npMonth === m && l.npYear === y) || (l.bnMonth === m && l.bnYear === y)
+  );
+  if (!pairs.length) return;
+
+  // Tạo SVG overlay
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.id = 'bp-arrows-svg';
+  svg.setAttribute('style','position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:20;overflow:visible;');
+  const calStyle = getComputedStyle(cal);
+  if (calStyle.position === 'static') cal.style.position = 'relative';
+  cal.appendChild(svg);
+
+  // Arrow marker dậf
+  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+  const marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+  marker.setAttribute('id','bp-arrow'); marker.setAttribute('markerWidth','8'); marker.setAttribute('markerHeight','6');
+  marker.setAttribute('refX','7'); marker.setAttribute('refY','3'); marker.setAttribute('orient','auto');
+  const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  poly.setAttribute('points','0 0, 8 3, 0 6'); poly.setAttribute('fill','rgba(139,92,246,0.75)');
+  marker.appendChild(poly); defs.appendChild(marker); svg.appendChild(defs);
+
+  const calRect = cal.getBoundingClientRect();
+
+  pairs.forEach(pair => {
+    const npCell = cal.querySelector(`[data-bp-id="${pair.pairId}"][data-bp-role="np"]`);
+    const bnCell = cal.querySelector(`[data-bp-id="${pair.pairId}"][data-bp-role="bn"]`);
+    if (!npCell || !bnCell) return;
+
+    const r1 = npCell.getBoundingClientRect();
+    const r2 = bnCell.getBoundingClientRect();
+    const x1 = r1.left - calRect.left + r1.width / 2;
+    const y1 = r1.top  - calRect.top  + r1.height / 2;
+    const x2 = r2.left - calRect.left + r2.width / 2;
+    const y2 = r2.top  - calRect.top  + r2.height / 2;
+    // Control point: lệch lên trên, tránh đè lên ô
+    const cy = Math.min(y1, y2) - Math.abs(x2 - x1) * 0.25 - 18;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', `M${x1},${y1} Q${(x1+x2)/2},${cy} ${x2},${y2}`);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke','rgba(139,92,246,0.65)');
+    path.setAttribute('stroke-width','2');
+    path.setAttribute('stroke-dasharray','6,3');
+    path.setAttribute('marker-end','url(#bp-arrow)');
+    svg.appendChild(path);
+  });
+}
+
 document.getElementById("closeModal").onclick = () => modal.style.display = "none";
 window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
 
@@ -1938,6 +2367,10 @@ async function load() {
     ]);
     console.log("Debug Data:", { att, shift, leave, otData });
     await processData(att, shift, leave, otData);
+    // Load bp-links theo tài khoản
+    const _empID = currentData.userMeta?.EmployeeID || 'default';
+    const _bpKey = `asoft-bp-links-${_empID}`;
+    currentData.bpLinks = await new Promise(res => chrome.storage.sync.get([_bpKey], r => res(r[_bpKey] || [])));
     render(SELECTED_MONTH);
   } catch (err) {
     console.error("Load Error:", err);

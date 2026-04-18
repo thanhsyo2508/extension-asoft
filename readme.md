@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard Extension v2.0
+# 📅 Asoft Attendance Dashboard Extension v2.3
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://img.shields.io/badge/version-2.0.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)](https://img.shields.io/badge/version-2.3.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.2.zip](asoft-attendance-v2.2.zip)
+[Tải về asoft-attendance-v2.3.zip](asoft-attendance-v2.3.zip)
 
 ---
 
@@ -26,16 +26,41 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 
 ---
 
+## 🆕 Changelog
+
+### v2.3 — 2026-04-18
+> **Tính năng Bù Phép Drag-Drop hoàn chỉnh**
+
+- ✨ **Drag-Drop Bù Phép (Comp Swap)**: Kéo một ngày OT (làm cuối tuần/lễ) thả vào ngày làm việc để tự động mở form và gửi đồng thời 2 đơn liên kết:
+  - **Đơn 1 — NP** (Nghỉ phép năm): cho ngày được nghỉ bù.
+  - **Đơn 2 — BN** (Làm bù công nhật): cho ngày đi làm thêm.
+- 🔗 **Mã liên kết `[pairId]` trong lý do đơn**: `pairId` được tạo ngay khi mở modal và nhúng vào trường *Lý do* của cả 2 đơn — đảm bảo truy ngược được liên kết trực tiếp từ server mà không phụ thuộc hoàn toàn vào local storage.
+- 🗺️ **Hiển thị mũi tên liên kết SVG** trên lịch: sau khi gửi đơn, 2 ngày được nối với nhau bằng đường cong có mũi tên (dashed arc) màu tím, giúp nhận biết cặp ngày nghỉ/làm bù ngay trên giao diện.
+- 🗑️ **Tự động xóa liên kết khi xóa đơn**: khi xóa đơn NP hoặc BN thành công, hệ thống tự động tìm và xóa entry tương ứng trong `chrome.storage.sync` — mũi tên và badge trên lịch biến mất ngay sau khi reload.
+
+### v2.2 — trước đó
+- Các tính năng cũ giữ nguyên (xem chi tiết bên dưới).
+
+---
+
 ## 🔥 Các Tính Năng Đột Phá
 
-### 1. 🧠 Smart Suggestion Logic (Gợi ý Thông minh)
+### 1. 🔄 Bù Phép Drag-Drop *(Mới v2.3)*
+Không cần mở nhiều form thủ công. Chỉ cần **kéo ngày OT** (cuối tuần/lễ đã làm) và **thả vào ngày muốn nghỉ bù**:
+- Hệ thống mở modal xác nhận với 2 card: *Đơn NP* cho ngày nghỉ và *Đơn BN* cho ngày làm bù.
+- Tự động điền ca làm việc, số giờ, lý do kèm **mã liên kết duy nhất** `[pairId]`.
+- Gửi tuần tự 2 đơn lên server, xử lý retry khi trùng ApplicationID.
+- Sau khi gửi thành công, **mũi tên SVG cong** xuất hiện trên lịch nối 2 ngày lại.
+- Khi **xóa một trong 2 đơn**, liên kết lập tức bị phá vỡ — badge và mũi tên biến mất.
+
+### 2. 🧠 Smart Suggestion Logic (Gợi ý Thông minh)
 Không còn phải tự mình tính toán giờ giấc hay chọn loại đơn phức tạp. Hệ thống tự động phân tích:
 - **Đi trễ/Về sớm**: Tự động gợi ý bổ sung vân tay hoặc đổi ca (DXDC) phù hợp nhất với giờ quẹt thực tế.
 - **Quên quẹt thẻ**: Tự động nhận diện buổi (Sáng/Chiều) để gợi ý bổ sung giờ Vào/Ra.
 - **Làm thêm giờ (OT)**: Tự động tính toán số giờ OT dựa trên checkout thực tế và làm tròn xuống block 15 phút an toàn.
 - **Nghỉ phép**: Tự động nhận diện ngày vắng mặt để gợi ý đơn xin nghỉ.
 
-### 2. 🎨 Hệ Thống Theme Đa Dạng (6 Styles)
+### 3. 🎨 Hệ Thống Theme Đa Dạng (6 Styles)
 Tùy biến không gian làm việc theo sở thích với 6 bộ giao diện được tối ưu hóa độ tương phản và thẩm mỹ:
 
 | 🌑 Dark Mode | ☀️ Light Mode | 🌸 Spring Theme |
@@ -46,7 +71,7 @@ Tùy biến không gian làm việc theo sở thích với 6 bộ giao diện đ
 | :---: | :---: | :---: |
 | ![Summer](attendance-extension/video/theme-summer.png) | ![Autumn](attendance-extension/video/theme-autumn.png) | ![Winter](attendance-extension/video/theme-winter.png) |
 
-### 3. 📊 Tương Tác Dữ Liệu Trực Quan
+### 4. 📊 Tương Tác Dữ Liệu Trực Quan
 - **Highlight theo thẻ**: Nhấn vào các chỉ số "Nghỉ", "Trễ", "Sớm" ở Sidebar để lịch tự động làm nổi bật các ngày vi phạm tương ứng.
 - **Bộ chọn Tháng/Năm Premium**: Điều hướng thời gian nhanh chóng với giao diện popup hiện đại thay vì dropdown mặc định nhàm chán.
 - **Xuất dữ liệu**: Hỗ trợ xuất báo cáo ngay lập tức cho tháng hiện tại.
@@ -61,6 +86,7 @@ Tùy biến không gian làm việc theo sở thích với 6 bộ giao diện đ
 | **Tạo đơn mới** | ![Create](attendance-extension/video/create-a-request.png) | Giao diện form điền sẵn (Auto-fill) thông minh, hỗ trợ tìm kiếm người duyệt nhanh. |
 | **Quản lý đơn** | ![Delete](attendance-extension/video/delete-a-request.png) | Xem trạng thái duyệt và cho phép xóa đơn trực tiếp ngay tại popup chi tiết. |
 | **Chọn tháng** | ![Picker](attendance-extension/video/pickerMonth.png) | Popup chọn tháng trực quan, hỗ trợ quay lại năm nhanh và chuyển về "Hôm nay". |
+| **Bù phép Drag-Drop** | *(xem demo gif)* | Kéo ngày OT thả vào ngày nghỉ → tạo 2 đơn NP+BN liên kết tự động. *(Mới v2.3)* |
 
 ---
 
@@ -68,8 +94,9 @@ Tùy biến không gian làm việc theo sở thích với 6 bộ giao diện đ
 Dự án được xây dựng với tiêu chí hiệu năng cao và không phụ thuộc thư viện bên ngoài:
 - **Core**: Vanilla JavaScript (ES6+) tối ưu tốc độ xử lý DOM.
 - **Styling**: CSS Variables kết hợp Backdrop Filter cho hiệu ứng kính mờ (Glass Morphism).
-- **Storage**: `chrome.storage.sync` & `localStorage` để đồng bộ cấu hình người dùng (vị trí, kích thước, theme, zoom).
+- **Storage**: `chrome.storage.sync` & `localStorage` để đồng bộ cấu hình người dùng (vị trí, kích thước, theme, zoom) và lưu liên kết bù phép (`bpLinks`).
 - **Communication**: Interceptor API để giao tiếp mượt mà với backend ASP.NET HRM.
+- **SVG Overlay**: Vẽ mũi tên cong động trên lịch để trực quan hóa liên kết NP↔BN.
 
 ---
 
