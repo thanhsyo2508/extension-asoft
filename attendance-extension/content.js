@@ -809,27 +809,69 @@ async function api(path, body, isJson = true) {
   catch { console.log("RAW:", text); throw "Not JSON"; }
 }
 
-async function fetchAttendance(monthStr) {
+/* ========= CURRENT USER RESOLVER ========= */
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+}
+
+async function fetchCurrentUser() {
+  // Ưu tiên 1: Đọc từ Cookie (chính xác nhất cho người đang đăng nhập)
+  const cookieUserID = getCookie('UserID');
+  if (cookieUserID && /^\d{5,}$/.test(cookieUserID)) {
+    console.log(`[CurrentUser] Lấy từ Cookie UserID: ${cookieUserID}`);
+    return { EmployeeID: cookieUserID, FullName: '' };
+  }
+
+  // Ưu tiên 2: Tìm trong DOM
+  const domSelectors = [
+    '#EmployeeID', '[name="EmployeeID"]', '.EmployeeID', '#hfEmployeeID', '[data-employee-id]'
+  ];
+  for (const sel of domSelectors) {
+    const el = document.querySelector(sel);
+    const val = el?.value || el?.innerText?.trim() || el?.dataset?.employeeId;
+    if (val && /^\d{5,}$/.test(val)) {
+      console.log(`[CurrentUser] Lấy từ DOM (${sel}): ${val}`);
+      return { EmployeeID: val, FullName: '' };
+    }
+  }
+
+  console.warn('[CurrentUser] Không tìm thấy EmployeeID người đăng nhập!');
+  return null;
+}
+
+async function fetchAttendance(monthStr, employeeID) {
   const [y, m] = monthStr.split("-");
   const lastDay = new Date(y, m, 0).getDate();
-  const body = new URLSearchParams({
-    page: 1, pageSize: 200,
-    "args[0].Key": "systemInfo[]", "args[0].Value[0]": "HRMF2260", "args[0].Value[1]": "HRM", "args[0].Value[2]": "HRMT2260",
-    "args[1].Key": "ftype[]", "args[1].Value[0]": 5,
-    "args[2].Key": "dttype[]", "args[2].Value[0]": 9, "args[3].Key": "key[]", "args[3].Value[0]": "AbsentDate",
-    "args[4].Key": "value[]", "args[4].Value[0]": `01/${m}/${y}`, "args[4].Value[1]": `${lastDay}/${m}/${y}`
-  });
+  const fromDate = `01/${m}/${y}`;
+  const toDate = `${lastDay}/${m}/${y}`;
+  const empID = employeeID || "";
+
+  // Sử dụng cấu trúc payload mở rộng chính xác như hệ thống Asoft để không bị lỗi hoặc trả về Data rỗng
+  const template = `sort=&page=1&pageSize=200&group=&filter=&rdoFilter=1&FromDatePeriodControl=${encodeURIComponent(fromDate)}&ToDatePeriodControl=${encodeURIComponent(toDate)}&FromToDate_Content_DataType=9&FromToDate_Type_Fields=5&IsPeriod=0&FromDatePeriodControl_Type_Fields=5&ToDatePeriodControl_Type_Fields=5&FromDatePeriodControl_Content_DataType=13&ToDatePeriodControl_Content_DataType=13&CheckListPeriodControl_Type_Fields=4&CheckListPeriodControl_Content_DataType=13&DivisionID_Content_DataType=7&DivisionID_Type_Fields=4&DivisionID_HRMF2260=&DivisionID1_Content_DataType=7&DivisionID1_Type_Fields=1&DivisionID1_HRMF2260=&Period_Content_DataType=7&Period_Type_Fields=1&Period_HRMF2260=&FromDate_Content_DataType=9&FromDate_Type_Fields=5&FromDate_HRMF2260=&ToDate_Content_DataType=9&ToDate_Type_Fields=5&ToDate_HRMF2260=&DepartmentID1_Content_DataType=7&DepartmentID1_Type_Fields=3&DepartmentID1_HRMF2260=&View_Content_DataType=7&View_Type_Fields=1&View_HRMF2260=&CreateUserID_Content_DataType=7&CreateUserID_Type_Fields=1&CreateUserID_HRMF2260=&CreateDate_Content_DataType=13&CreateDate_Type_Fields=1&CreateDate_HRMF2260=&LastModifyUserID_Content_DataType=7&LastModifyUserID_Type_Fields=1&LastModifyUserID_HRMF2260=&LastModifyDate_Content_DataType=13&LastModifyDate_Type_Fields=1&LastModifyDate_HRMF2260=&EmployeeID_Content_DataType=7&EmployeeID_Type_Fields=1&EmployeeID_HRMF2260=${empID}&FullName_Content_DataType=7&FullName_Type_Fields=1&FullName_HRMF2260=&DepartmentID_Content_DataType=7&DepartmentID_Type_Fields=3&CheckInList=DepartmentID_HRMF2260&DepartmentID_HRMF2260_input=&DepartmentID_HRMF2260=&DepartmentName_Content_DataType=7&DepartmentName_Type_Fields=1&DepartmentName_HRMF2260=&AbsentCardNo_Content_DataType=7&AbsentCardNo_Type_Fields=1&AbsentCardNo_HRMF2260=&TranMonth_Content_DataType=4&TranMonth_Type_Fields=1&TranMonth_HRMF2260=&TranYear_Content_DataType=4&TranYear_Type_Fields=1&TranYear_HRMF2260=&AbsentDate_Content_DataType=7&AbsentDate_Type_Fields=1&AbsentDate_HRMF2260=&AbsentHour_Content_DataType=7&AbsentHour_Type_Fields=1&AbsentHour_HRMF2260=&args%5B0%5D.Key=ftype%5B%5D&args%5B0%5D.Value%5B0%5D=&args%5B0%5D.Value%5B1%5D=5&args%5B0%5D.Value%5B2%5D=5&args%5B0%5D.Value%5B3%5D=&args%5B0%5D.Value%5B4%5D=4&args%5B0%5D.Value%5B5%5D=1&args%5B0%5D.Value%5B6%5D=1&args%5B0%5D.Value%5B7%5D=5&args%5B0%5D.Value%5B8%5D=5&args%5B0%5D.Value%5B9%5D=3&args%5B0%5D.Value%5B10%5D=1&args%5B0%5D.Value%5B11%5D=1&args%5B0%5D.Value%5B12%5D=1&args%5B0%5D.Value%5B13%5D=1&args%5B0%5D.Value%5B14%5D=1&args%5B0%5D.Value%5B15%5D=1&args%5B0%5D.Value%5B16%5D=1&args%5B0%5D.Value%5B17%5D=3&args%5B0%5D.Value%5B18%5D=1&args%5B0%5D.Value%5B19%5D=1&args%5B0%5D.Value%5B20%5D=1&args%5B0%5D.Value%5B21%5D=1&args%5B0%5D.Value%5B22%5D=1&args%5B0%5D.Value%5B23%5D=1&args%5B1%5D.Key=dttype%5B%5D&args%5B1%5D.Value%5B0%5D=&args%5B1%5D.Value%5B1%5D=13&args%5B1%5D.Value%5B2%5D=13&args%5B1%5D.Value%5B3%5D=&args%5B1%5D.Value%5B4%5D=7&args%5B1%5D.Value%5B5%5D=7&args%5B1%5D.Value%5B6%5D=7&args%5B1%5D.Value%5B7%5D=9&args%5B1%5D.Value%5B8%5D=9&args%5B1%5D.Value%5B9%5D=7&args%5B1%5D.Value%5B10%5D=7&args%5B1%5D.Value%5B11%5D=7&args%5B1%5D.Value%5B12%5D=13&args%5B1%5D.Value%5B13%5D=7&args%5B1%5D.Value%5B14%5D=13&args%5B1%5D.Value%5B15%5D=7&args%5B1%5D.Value%5B16%5D=7&args%5B1%5D.Value%5B17%5D=7&args%5B1%5D.Value%5B18%5D=7&args%5B1%5D.Value%5B19%5D=7&args%5B1%5D.Value%5B20%5D=4&args%5B1%5D.Value%5B21%5D=4&args%5B1%5D.Value%5B22%5D=7&args%5B1%5D.Value%5B23%5D=7&args%5B2%5D.Key=key%5B%5D&args%5B2%5D.Value%5B0%5D=rdoFilter&args%5B2%5D.Value%5B1%5D=FromDatePeriodControl&args%5B2%5D.Value%5B2%5D=ToDatePeriodControl&args%5B2%5D.Value%5B3%5D=IsPeriod&args%5B2%5D.Value%5B4%5D=DivisionID&args%5B2%5D.Value%5B5%5D=DivisionID1&args%5B2%5D.Value%5B6%5D=Period&args%5B2%5D.Value%5B7%5D=FromDate&args%5B2%5D.Value%5B8%5D=ToDate&args%5B2%5D.Value%5B9%5D=DepartmentID1&args%5B2%5D.Value%5B10%5D=View&args%5B2%5D.Value%5B11%5D=CreateUserID&args%5B2%5D.Value%5B12%5D=CreateDate&args%5B2%5D.Value%5B13%5D=LastModifyUserID&args%5B2%5D.Value%5B14%5D=LastModifyDate&args%5B2%5D.Value%5B15%5D=EmployeeID&args%5B2%5D.Value%5B16%5D=FullName&args%5B2%5D.Value%5B17%5D=DepartmentID&args%5B2%5D.Value%5B18%5D=DepartmentName&args%5B2%5D.Value%5B19%5D=AbsentCardNo&args%5B2%5D.Value%5B20%5D=TranMonth&args%5B2%5D.Value%5B21%5D=TranYear&args%5B2%5D.Value%5B22%5D=AbsentDate&args%5B2%5D.Value%5B23%5D=AbsentHour&args%5B2%5D.Value%5B24%5D=HRMT2260&args%5B3%5D.Key=value%5B%5D&args%5B3%5D.Value%5B0%5D=1&args%5B3%5D.Value%5B1%5D=${encodeURIComponent(fromDate)}&args%5B3%5D.Value%5B2%5D=${encodeURIComponent(toDate)}&args%5B3%5D.Value%5B3%5D=0&args%5B3%5D.Value%5B4%5D=&args%5B3%5D.Value%5B5%5D=&args%5B3%5D.Value%5B6%5D=&args%5B3%5D.Value%5B7%5D=&args%5B3%5D.Value%5B8%5D=&args%5B3%5D.Value%5B9%5D=&args%5B3%5D.Value%5B10%5D=&args%5B3%5D.Value%5B11%5D=&args%5B3%5D.Value%5B12%5D=&args%5B3%5D.Value%5B13%5D=&args%5B3%5D.Value%5B14%5D=&args%5B3%5D.Value%5B15%5D=${empID}&args%5B3%5D.Value%5B16%5D=&args%5B3%5D.Value%5B17%5D=&args%5B3%5D.Value%5B18%5D=&args%5B3%5D.Value%5B19%5D=&args%5B3%5D.Value%5B20%5D=&args%5B3%5D.Value%5B21%5D=&args%5B3%5D.Value%5B22%5D=&args%5B3%5D.Value%5B23%5D=&args%5B4%5D.Key=systemInfo%5B%5D&args%5B4%5D.Value%5B0%5D=HRMF2260&args%5B4%5D.Value%5B1%5D=HRM&args%5B4%5D.Value%5B2%5D=HRMT2260&strWhere=`;
+  
+  const body = new URLSearchParams(template);
+
   try {
-    return await api("/GridCommon/Read?TableName=HRMT2260", body, false);
+    const r = await api("/GridCommon/Read?TableName=HRMT2260", body, false);
+    // Client-side filter bổ sung để an toàn (bảo vệ kép)
+    if (r && r.Data && employeeID) {
+        r.Data = r.Data.filter(item => item.EmployeeID === employeeID);
+    }
+    return r;
   } catch (e) { return { Data: [] }; }
 }
 
-async function fetchShift(monthStr) {
+async function fetchShift(monthStr, employeeID) {
   const [y, m] = monthStr.split("-");
   const body = new URLSearchParams({
-    page: 1, pageSize: 200, "args[0].Key": "key[]", "args[0].Value[0]": "EmployeeID",
-    "args[1].Key": "value[]", "args[1].Value[0]": (currentData.userMeta?.EmployeeID || "000174"),
-    "args[2].Key": "systemInfo[]", "args[2].Value[0]": "HRM", "args[2].Value[1]": "HRMF2323", "args[2].Value[2]": "HRMT2323"
+    page: 1, pageSize: 200,
+    "args[0].Key": "key[]", "args[0].Value[0]": "EmployeeID",
+    "args[1].Key": "value[]", "args[1].Value[0]": employeeID,
+    "args[2].Key": "systemInfo[]", "args[2].Value[0]": "HRM", "args[2].Value[1]": "HRMF2323", "args[2].Value[2]": "HRMT2323",
+    "args[3].Value[15]": employeeID
   });
   try {
     return await api("/GridCommon/ReadEdit?TableName=HRMT2323", body, false);
@@ -1133,12 +1175,19 @@ document.querySelectorAll('.stat-card').forEach((card, idx) => {
 let currentData = { map: {}, shiftMap: {}, requestMap: {}, stats: {}, currentMonthOT: null };
 let dragSourceDay = null; // { d, m, y, times } — trạng thái drag bù phép
 
-async function processData(attendanceData, shiftData, leaveData, otData = null) {
+async function processData(attendanceData, shiftData, leaveData, otData = null, currentUserInfo = null) {
   const map = {}, shiftMap = {}, requestMap = {};
   let late = 0, early = 0;
 
-  const userSource = attendanceData.Data?.[0] || shiftData.Data?.[0];
-  if (userSource) document.getElementById("userInfo").innerText = `${userSource.FullName} (${userSource.EmployeeID})`;
+  const userSource = attendanceData.Data?.[0] || shiftData.Data?.[0] || {};
+  const eFullName = currentUserInfo?.FullName || userSource.FullName || '';
+  const eEmployeeID = currentUserInfo?.EmployeeID || userSource.EmployeeID || '';
+  
+  if (eEmployeeID) {
+    document.getElementById("userInfo").innerText = `${eFullName} (${eEmployeeID})`;
+  } else {
+    document.getElementById("userInfo").innerText = "⚠️ Không rõ nhân viên";
+  }
 
   if (attendanceData.Data?.length > 0) {
     attendanceData.Data.forEach(r => {
@@ -1189,13 +1238,13 @@ async function processData(attendanceData, shiftData, leaveData, otData = null) 
     }
   });
 
-  const userMeta = userSource ? {
-    EmployeeID: userSource.EmployeeID,
-    FullName: userSource.FullName,
+  const userMeta = {
+    EmployeeID: eEmployeeID,
+    FullName: eFullName,
     DivisionID: userSource.DivisionID || "MA",
     DepartmentID: userSource.DepartmentID || "",
     DepartmentName: userSource.DepartmentName || ""
-  } : null;
+  };
 
   let ot150 = 0, ot200 = 0;
   if (otData && otData.Data && otData.Data.length > 0) {
@@ -1354,12 +1403,12 @@ function render(monthStr) {
     const bnLink = bpLinks.find(l => l.bnDay === d && l.bnMonth === m && l.bnYear === y);
     if (npLink) {
       html += `<div class="time-tag req" style="font-size:10px; gap:3px;">&#8644; Bù: ${npLink.bnDate}</div>`;
-      cell.dataset.bpId   = npLink.pairId;
+      cell.dataset.bpId = npLink.pairId;
       cell.dataset.bpRole = 'np';
     }
     if (bnLink) {
       html += `<div class="time-tag normal" style="font-size:10px; gap:3px;">&#8644; Nghỉ: ${bnLink.npDate}</div>`;
-      cell.dataset.bpId   = bnLink.pairId;
+      cell.dataset.bpId = bnLink.pairId;
       cell.dataset.bpRole = 'bn';
     }
 
@@ -1906,7 +1955,7 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
 
 /* ========= COMP SWAP MODAL (BÙ PHÉP) ========= */
 async function openCompSwapModal(srcDay, tgtDay) {
-  const fmt = (d, m, y) => `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
+  const fmt = (d, m, y) => `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
   const srcDate = fmt(srcDay.d, srcDay.m, srcDay.y);
   const tgtDate = fmt(tgtDay.d, tgtDay.m, tgtDay.y);
   const shiftDefault = 'CA01 - 08:00';
@@ -1915,7 +1964,7 @@ async function openCompSwapModal(srcDay, tgtDay) {
   const empID = currentData.userMeta?.EmployeeID || 'default';
   const approverKey = `asoft-approver-${empID}`;
   // Tạo pairId sớm để nhúng vào lý do đơn ngay từ đầu
-  const pairId = `bp_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+  const pairId = `bp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
   let modal = document.getElementById('compSwapModal');
   if (!modal) {
@@ -1961,7 +2010,7 @@ async function openCompSwapModal(srcDay, tgtDay) {
             </div>
             <div class="req-field" style="grid-column:span 2;"><span class="req-label">Ca làm việc</span>
               <select id="csShift1" class="form-control" style="margin-top:4px;">
-                ${SHIFT_LIST.map(s => `<option value="${s.id}" ${shiftTgt===s.id?'selected':''}>${s.text}</option>`).join('')}
+                ${SHIFT_LIST.map(s => `<option value="${s.id}" ${shiftTgt === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -1981,7 +2030,7 @@ async function openCompSwapModal(srcDay, tgtDay) {
             </div>
             <div class="req-field" style="grid-column:span 2;"><span class="req-label">Ca làm việc</span>
               <select id="csShift2" class="form-control" style="margin-top:4px;">
-                ${SHIFT_LIST.map(s => `<option value="${s.id}" ${shiftSrc===s.id?'selected':''}>${s.text}</option>`).join('')}
+                ${SHIFT_LIST.map(s => `<option value="${s.id}" ${shiftSrc === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -2005,10 +2054,10 @@ async function openCompSwapModal(srcDay, tgtDay) {
         <label class="req-label">Phòng ban</label>
         <select id="csDept" class="form-control">
           ${DEPARTMENT_LIST.map(dept => {
-            const sel = currentData.userMeta?.DepartmentID === dept.id ||
-              (currentData.userMeta?.DepartmentName || '').toLowerCase() === dept.name.toLowerCase();
-            return `<option value="${dept.id}" ${sel?'selected':''}>${dept.name}</option>`;
-          }).join('')}
+    const sel = currentData.userMeta?.DepartmentID === dept.id ||
+      (currentData.userMeta?.DepartmentName || '').toLowerCase() === dept.name.toLowerCase();
+    return `<option value="${dept.id}" ${sel ? 'selected' : ''}>${dept.name}</option>`;
+  }).join('')}
         </select>
       </div>
 
@@ -2057,8 +2106,8 @@ async function openCompSwapModal(srcDay, tgtDay) {
   csSearch.onfocus = () => { if (approvers?.length) csResults.style.display = 'block'; };
   csSearch.oninput = (e) => {
     const q = e.target.value.toLowerCase();
-    renderCSApprovers((approvers||[]).filter(a =>
-      (a.FullName||'').toLowerCase().includes(q) || (a.EmployeeID||'').toLowerCase().includes(q)
+    renderCSApprovers((approvers || []).filter(a =>
+      (a.FullName || '').toLowerCase().includes(q) || (a.EmployeeID || '').toLowerCase().includes(q)
     ));
     csResults.style.display = 'block';
   };
@@ -2087,36 +2136,36 @@ async function openCompSwapModal(srcDay, tgtDay) {
 
     const buildPayload = (day, month, year, absentType, hours, shiftVal, reason, keyData, appID) => {
       const dateStr = fmt(day, month, year);
-      const mmStr = String(month).padStart(2,'0');
+      const mmStr = String(month).padStart(2, '0');
       return {
-        RequestTypeID:"7,DXP", ApplicationID:"7,"+appID, AbsentTypeID:"7,"+absentType,
-        Description:"12,"+reason, DepartmentID:"7,"+deptID,
-        SectionID:"7,", SubsectionID:"7,", ProcessID:"7,",
-        EmployeeName:"7,"+(currentData.userMeta?.FullName||""),
-        RequestFromDate:"9,"+dateStr, RequestFromDate_DT:"13,",
-        RequestToDate:"9,"+dateStr, RequestToDate_DT:"13,",
-        DailyHours:"8,"+hours, TotalTime:"8,"+hours,
-        OverTime:"8,0.00", OverTimeNN:"8,0.00", OverTimeCompany:"8,0.00",
-        ShiftNow:"9,", ShiftID:"9,"+shiftVal,
-        Reason:"7,"+reason, Date:"13,", InOutID:"7,", Place:"7,", Note:"7,",
-        DaysRemained:"8,0.0", OTDaysRemained:"8,0.0", UseVehicle:"7,",
-        APK:"1,", APKDetail:"1,", FromToDate:"9,",
-        DivisionID:"7,"+(currentData.userMeta?.DivisionID||""),
-        DepartmentName:"7,"+(selectedDept?selectedDept.name:""),
-        SectionName:"7,", SubsectionName:"7,", ProcessName:"7,",
-        EmployeeID:"7,"+(currentData.userMeta?.EmployeeID||""),
-        CreateUserID:"7,", CreateDate:"9,", LastModifyUserID:"7,", LastModifyDate:"9,",
-        LastKey:"7,"+keyData.LastKey, LastKeyAPK:"7,"+keyData.LastKeyAPK,
-        FormStatus:"7,AddNew", Level:"7,", TypeName:"7,DXP",
-        ApproveLevel:"7,1", ApprovingLevel:"7,", Type_9000:"7,",
-        GoStraightName:"7,", ComeStraightName:"7,", AbsentTypeName:"7,", ShiftName:"9,",
-        IsPreShiftOTName:"7,", InOut:"7,", AskForVehicleName:"7,", UseVehicleName:"7,",
-        HaveLunchName:"7,", IsOnTripOTName:"7,", StatusName:"7,",
-        Status:"6,0", ApprovalNotes:"7,", Day:"0,200",
-        ApprovePerson01ID:"7,"+approver,
-        IsSeri:"6,0", GoStraight:"6,0", ComeStraight:"6,0",
-        IsPreShiftOT:"6,0", AskForVehicle:"6,0", HaveLunch:"6,0",
-        IsOnTripOT:"6,0", IsCompen:"6,0"
+        RequestTypeID: "7,DXP", ApplicationID: "7," + appID, AbsentTypeID: "7," + absentType,
+        Description: "12," + reason, DepartmentID: "7," + deptID,
+        SectionID: "7,", SubsectionID: "7,", ProcessID: "7,",
+        EmployeeName: "7," + (currentData.userMeta?.FullName || ""),
+        RequestFromDate: "9," + dateStr, RequestFromDate_DT: "13,",
+        RequestToDate: "9," + dateStr, RequestToDate_DT: "13,",
+        DailyHours: "8," + hours, TotalTime: "8," + hours,
+        OverTime: "8,0.00", OverTimeNN: "8,0.00", OverTimeCompany: "8,0.00",
+        ShiftNow: "9,", ShiftID: "9," + shiftVal,
+        Reason: "7," + reason, Date: "13,", InOutID: "7,", Place: "7,", Note: "7,",
+        DaysRemained: "8,0.0", OTDaysRemained: "8,0.0", UseVehicle: "7,",
+        APK: "1,", APKDetail: "1,", FromToDate: "9,",
+        DivisionID: "7," + (currentData.userMeta?.DivisionID || ""),
+        DepartmentName: "7," + (selectedDept ? selectedDept.name : ""),
+        SectionName: "7,", SubsectionName: "7,", ProcessName: "7,",
+        EmployeeID: "7," + (currentData.userMeta?.EmployeeID || ""),
+        CreateUserID: "7,", CreateDate: "9,", LastModifyUserID: "7,", LastModifyDate: "9,",
+        LastKey: "7," + keyData.LastKey, LastKeyAPK: "7," + keyData.LastKeyAPK,
+        FormStatus: "7,AddNew", Level: "7,", TypeName: "7,DXP",
+        ApproveLevel: "7,1", ApprovingLevel: "7,", Type_9000: "7,",
+        GoStraightName: "7,", ComeStraightName: "7,", AbsentTypeName: "7,", ShiftName: "9,",
+        IsPreShiftOTName: "7,", InOut: "7,", AskForVehicleName: "7,", UseVehicleName: "7,",
+        HaveLunchName: "7,", IsOnTripOTName: "7,", StatusName: "7,",
+        Status: "6,0", ApprovalNotes: "7,", Day: "0,200",
+        ApprovePerson01ID: "7," + approver,
+        IsSeri: "6,0", GoStraight: "6,0", ComeStraight: "6,0",
+        IsPreShiftOT: "6,0", AskForVehicle: "6,0", HaveLunch: "6,0",
+        IsOnTripOT: "6,0", IsCompen: "6,0"
       };
     };
 
@@ -2129,41 +2178,41 @@ async function openCompSwapModal(srcDay, tgtDay) {
       const reason2 = document.getElementById('csReason2').value;
 
       // Đơn 1: DXNP-NP cho ngày nghỉ (tgtDay)
-      const mm1 = String(tgtDay.m).padStart(2,'0'), yy1 = String(tgtDay.y).slice(-2);
-      const run1 = String(Number(key1.LastKey)+1).padStart(4,'0');
+      const mm1 = String(tgtDay.m).padStart(2, '0'), yy1 = String(tgtDay.y).slice(-2);
+      const run1 = String(Number(key1.LastKey) + 1).padStart(4, '0');
       const appID1 = `DXP/${mm1}/${yy1}/${run1}`;
       const payload1 = buildPayload(tgtDay.d, tgtDay.m, tgtDay.y, 'NP', hours1, shift1, reason1, key1, appID1);
       let res1 = await submitVoucher({ dataScreen: [[payload1]], voucherPackages: [] });
 
       if (res1.Status === 1 && res1.Message?.includes('ApplicationID')) {
         const nk = await getNewVoucherKey('DXNP');
-        const nr = String(Number(nk.LastKey)+1).padStart(4,'0');
+        const nr = String(Number(nk.LastKey) + 1).padStart(4, '0');
         payload1.ApplicationID = `7,DXP/${mm1}/${yy1}/${nr}`;
-        payload1.LastKey = '7,'+nk.LastKey; payload1.LastKeyAPK = '7,'+nk.LastKeyAPK;
+        payload1.LastKey = '7,' + nk.LastKey; payload1.LastKeyAPK = '7,' + nk.LastKeyAPK;
         res1 = await submitVoucher({ dataScreen: [[payload1]], voucherPackages: [] });
       }
 
-      if (res1.Status !== 0 && !res1.UpdateSuccess) throw new Error(`Đơn 1 thất bại: ${res1.Message||'Lỗi server'}`);
+      if (res1.Status !== 0 && !res1.UpdateSuccess) throw new Error(`Đơn 1 thất bại: ${res1.Message || 'Lỗi server'}`);
 
       // Đơn 2: DXNP-BN cho ngày làm bù (srcDay)
       submitBtn.innerHTML = '<span class="icon">⏳</span> Đang gửi đơn 2...';
       const key2 = await getNewVoucherKey('DXNP');
-      const mm2 = String(srcDay.m).padStart(2,'0'), yy2 = String(srcDay.y).slice(-2);
-      const run2 = String(Number(key2.LastKey)+1).padStart(4,'0');
+      const mm2 = String(srcDay.m).padStart(2, '0'), yy2 = String(srcDay.y).slice(-2);
+      const run2 = String(Number(key2.LastKey) + 1).padStart(4, '0');
       const appID2 = `DXP/${mm2}/${yy2}/${run2}`;
       const payload2 = buildPayload(srcDay.d, srcDay.m, srcDay.y, 'BN', hours2, shift2, reason2, key2, appID2);
       let res2 = await submitVoucher({ dataScreen: [[payload2]], voucherPackages: [] });
 
       if (res2.Status === 1 && res2.Message?.includes('ApplicationID')) {
         const nk2 = await getNewVoucherKey('DXNP');
-        const nr2 = String(Number(nk2.LastKey)+1).padStart(4,'0');
+        const nr2 = String(Number(nk2.LastKey) + 1).padStart(4, '0');
         payload2.ApplicationID = `7,DXP/${mm2}/${yy2}/${nr2}`;
-        payload2.LastKey = '7,'+nk2.LastKey; payload2.LastKeyAPK = '7,'+nk2.LastKeyAPK;
+        payload2.LastKey = '7,' + nk2.LastKey; payload2.LastKeyAPK = '7,' + nk2.LastKeyAPK;
         res2 = await submitVoucher({ dataScreen: [[payload2]], voucherPackages: [] });
       }
 
       if (res2.Status !== 0 && !res2.UpdateSuccess) {
-        statusDiv.innerText = `⚠️ Đơn 1 thành công! Nhưng đơn 2 thất bại: ${res2.Message||'Lỗi'}. Kiểm tra lại thủ công nhé.`;
+        statusDiv.innerText = `⚠️ Đơn 1 thành công! Nhưng đơn 2 thất bại: ${res2.Message || 'Lỗi'}. Kiểm tra lại thủ công nhé.`;
         statusDiv.className = 'status-box danger'; statusDiv.style.display = 'block';
         submitBtn.disabled = false; submitBtn.innerHTML = '<span class="icon">🚀</span> Gửi 2 đơn'; return;
       }
@@ -2173,7 +2222,7 @@ async function openCompSwapModal(srcDay, tgtDay) {
       window.removeEventListener('click', closeCSDropdown);
 
       // Lưu pairId để link 2 đơn trên calendar (dùng lại pairId đã tạo từ đầu, khớp với lý do đơn)
-      const bpKey  = `asoft-bp-links-${empID}`;
+      const bpKey = `asoft-bp-links-${empID}`;
       const existLinks = await new Promise(res => chrome.storage.sync.get([bpKey], r => res(r[bpKey] || [])));
       existLinks.push({
         pairId,
@@ -2207,20 +2256,20 @@ function drawBPArrows(m, y) {
   if (!pairs.length) return;
 
   // Tạo SVG overlay
-  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.id = 'bp-arrows-svg';
-  svg.setAttribute('style','position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:20;overflow:visible;');
+  svg.setAttribute('style', 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:20;overflow:visible;');
   const calStyle = getComputedStyle(cal);
   if (calStyle.position === 'static') cal.style.position = 'relative';
   cal.appendChild(svg);
 
   // Arrow marker dậf
-  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
-  const marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
-  marker.setAttribute('id','bp-arrow'); marker.setAttribute('markerWidth','8'); marker.setAttribute('markerHeight','6');
-  marker.setAttribute('refX','7'); marker.setAttribute('refY','3'); marker.setAttribute('orient','auto');
-  const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
-  poly.setAttribute('points','0 0, 8 3, 0 6'); poly.setAttribute('fill','rgba(139,92,246,0.75)');
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+  marker.setAttribute('id', 'bp-arrow'); marker.setAttribute('markerWidth', '8'); marker.setAttribute('markerHeight', '6');
+  marker.setAttribute('refX', '7'); marker.setAttribute('refY', '3'); marker.setAttribute('orient', 'auto');
+  const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  poly.setAttribute('points', '0 0, 8 3, 0 6'); poly.setAttribute('fill', 'rgba(139,92,246,0.75)');
   marker.appendChild(poly); defs.appendChild(marker); svg.appendChild(defs);
 
   const calRect = cal.getBoundingClientRect();
@@ -2233,19 +2282,19 @@ function drawBPArrows(m, y) {
     const r1 = npCell.getBoundingClientRect();
     const r2 = bnCell.getBoundingClientRect();
     const x1 = r1.left - calRect.left + r1.width / 2;
-    const y1 = r1.top  - calRect.top  + r1.height / 2;
+    const y1 = r1.top - calRect.top + r1.height / 2;
     const x2 = r2.left - calRect.left + r2.width / 2;
-    const y2 = r2.top  - calRect.top  + r2.height / 2;
+    const y2 = r2.top - calRect.top + r2.height / 2;
     // Control point: lệch lên trên, tránh đè lên ô
     const cy = Math.min(y1, y2) - Math.abs(x2 - x1) * 0.25 - 18;
 
-    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d', `M${x1},${y1} Q${(x1+x2)/2},${cy} ${x2},${y2}`);
-    path.setAttribute('fill','none');
-    path.setAttribute('stroke','rgba(139,92,246,0.65)');
-    path.setAttribute('stroke-width','2');
-    path.setAttribute('stroke-dasharray','6,3');
-    path.setAttribute('marker-end','url(#bp-arrow)');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M${x1},${y1} Q${(x1 + x2) / 2},${cy} ${x2},${y2}`);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'rgba(139,92,246,0.65)');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('stroke-dasharray', '6,3');
+    path.setAttribute('marker-end', 'url(#bp-arrow)');
     svg.appendChild(path);
   });
 }
@@ -2358,15 +2407,25 @@ async function load() {
       await fetchPeriodUpdate(SELECTED_MONTH, periodDates);
     }
 
-    // Step 3: Fetch attendance and other data
+    // Tìm EmployeeID đăng nhập trước
+    const currentUser = await fetchCurrentUser();
+    const employeeID = currentUser ? currentUser.EmployeeID : null;
+
+    if (!employeeID) {
+      console.warn("Không xác định được EmployeeID. Extension sẽ cố gắng load dựa trên dữ liệu mặt định của bảng.");
+    } else {
+      console.log(`[Load] Đang lấy dữ liệu cho EmployeeID: ${employeeID}`);
+    }
+
+    // Step 3: Fetch attendance and other data, pass employeeID
     const [att, shift, leave, otData] = await Promise.all([
-      fetchAttendance(SELECTED_MONTH),
-      fetchShift(SELECTED_MONTH),
+      fetchAttendance(SELECTED_MONTH, employeeID),
+      fetchShift(SELECTED_MONTH, employeeID),
       fetchLeaveRequests(SELECTED_MONTH),
       fetchOT(SELECTED_MONTH)
     ]);
-    console.log("Debug Data:", { att, shift, leave, otData });
-    await processData(att, shift, leave, otData);
+    console.log("Debug Data:", { employeeID, att, shift, leave, otData });
+    await processData(att, shift, leave, otData, currentUser);
     // Load bp-links theo tài khoản
     const _empID = currentData.userMeta?.EmployeeID || 'default';
     const _bpKey = `asoft-bp-links-${_empID}`;
