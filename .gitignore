@@ -24,7 +24,7 @@ Thumbs.db
 # Build & Production
 dist/
 build/
-*.zip
+# *.zip
 *.crx
 *.pem
 
@@ -45,3 +45,5 @@ coverage/
 temp/
 tmp/
 .cache/
+
+/data

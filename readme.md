@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.3.zip](asoft-attendance-v2.3.zip)
+[Tải về asoft-attendance-v2.4.zip](asoft-attendance-v2.4.zip)
 
 ---
 
