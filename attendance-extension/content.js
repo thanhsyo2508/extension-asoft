@@ -1752,8 +1752,8 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
           </div>
           <div class="form-group"><label class="req-label">Loại chấm</label>
             <select id="inOutID" class="form-control">
-              <option value="V" ${suggested.inOut === "V" ? "selected" : ""}>Vào</option>
-              <option value="R" ${suggested.inOut === "R" ? "selected" : ""}>Ra</option>
+              <option value="0" ${suggested.inOut === "V" ? "selected" : ""}>Vào</option>
+              <option value="1" ${suggested.inOut === "R" ? "selected" : ""}>Ra</option>
             </select>
           </div>
         </div>
@@ -1830,8 +1830,8 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
       const mmStr = m.toString().padStart(2, '0');
 
       let prefix = "DXP";
-      if (type === "DXBSQT" || type === "DXLTG") prefix = "DOT";
-      else if (type === "DXDC") prefix = "DQT";
+      if (type === "DXLTG") prefix = "DOT";
+      else if (type === "DXDC" || type === "DXBSQT") prefix = "DQT";
       else if (type === "DXRN") prefix = "DXP"; // Add special case if needed
 
       const appID = `${prefix}/${mmStr}/${shortYear}/${running}`;
@@ -1909,9 +1909,12 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
       } else if (type === "DXBSQT") {
         const sH = document.getElementById("swipeHour").innerText;
         const sM = document.getElementById("swipeMin").innerText;
-        baseData.SwipeTime = "9," + dateStr + " " + sH + ":" + sM;
+        baseData.Date = "13," + dateStr + " " + sH + ":" + sM + ":00";
         baseData.InOutID = "7," + document.getElementById("inOutID").value;
-        baseData.ShiftID = "9," + shiftVal;
+        baseData.ShiftID = "9,";
+        baseData.DailyHours = "8,";
+        baseData.TotalTime = "8,0";
+        delete baseData.SwipeTime;
       } else if (type === "DXDC") {
         baseData.ShiftNow = "9," + shiftVal;
         baseData.ShiftID = "9," + document.getElementById("newShiftID").value;
