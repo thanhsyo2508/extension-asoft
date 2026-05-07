@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard Dashboard v2.4
+# 📅 Asoft Attendance Dashboard Dashboard v2.5
 
-[![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)](https://img.shields.io/badge/version-2.4.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://img.shields.io/badge/version-2.5.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.4.zip](asoft-attendance-v2.4.zip)
+[Tải về asoft-attendance-v2.5.zip](asoft-attendance-v2.5.zip)
 
 ---
 
@@ -27,6 +27,13 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 ---
 
 ## 🆕 Changelog
+
+### v2.5 — 2026-05-07
+> **Tự động hóa Release & Quản lý Mã nguồn**
+
+- 🚀 **Release Tool (PowerShell)**: Triển khai công cụ `release.ps1` giúp tự động hóa quy trình đóng gói và phát hành.
+- 📦 **GitHub Release Integration**: Tự động tạo bản Release trên GitHub và upload file zip đính kèm thông qua API.
+- 🔐 **Security**: Tích hợp quản lý thông tin xác thực qua file `.env` và bảo mật với `.gitignore`.
 
 ### v2.4 — 2026-05-07
 > **Mở rộng Dashboard & Tối ưu Trải nghiệm**
