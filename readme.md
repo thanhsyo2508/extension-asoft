@@ -4,7 +4,7 @@
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
-![Giao diện chính](attendance-extension/video/giaoDienChinh.png)
+![Giao diện chính](video/giaoDienChinh.png)
 
 **Asoft Attendance Extension** là một giải pháp quản lý công và đơn từ cao cấp, được thiết kế để mang lại trải nghiệm người dùng hiện đại và thông minh ngay trên nền tảng HRM hiện có. Với ngôn ngữ thiết kế **Glass Morphism** và trí tuệ nhân tạo tích hợp, việc quản lý thời gian chưa bao giờ dễ dàng và đẹp mắt đến thế.
 
@@ -20,22 +20,23 @@
 ## 📽️ Video Demo Trải Nghiệm
 Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông qua video dưới đây:
 
-![Demo Video](attendance-extension/video/demo.gif)
+![Demo Video](video/demo.gif)
 
-*(Nếu bạn không xem được video, hãy [nhấn vào đây](attendance-extension/video/demo.mp4) để tải hoặc xem trực tiếp)*
+*(Nếu bạn không xem được video, hãy [nhấn vào đây](video/demo.mp4) để tải hoặc xem trực tiếp)*
 
 ---
 
 ## 🆕 Changelog
 
 ### v2.4 — 2026-05-07
-> **Mở rộng Dashboard Chỉ số công**
+> **Mở rộng Dashboard & Tối ưu Trải nghiệm**
 
-- 📊 **Bổ sung 3 thẻ thống kê mới**: Tích hợp dữ liệu từ báo cáo `HRMT2320` để hiển thị:
-  - **Công thực tế**: Tổng số giờ làm việc thực tế dựa trên dữ liệu quẹt thẻ.
-  - **Công tính lương**: Số giờ công được ghi nhận để tính lương chính thức.
-  - **Công nhật**: Số giờ công nhật.
-- ⚡ **Tối ưu hiển thị Stats Panel**: Tự động cập nhật các chỉ số này mỗi khi load lại dữ liệu lịch.
+- 📊 **Bổ sung 3 thẻ thống kê mới**: Tích hợp dữ liệu từ báo cáo `HRMT2320` để hiển thị **Công thực tế**, **Công tính lương** và **Công nhật**.
+- 🤏 **Tính năng Minimize (Thu nhỏ)**: Cho phép thu gọn dashboard thành một thanh biểu tượng (pill bar) nhỏ gọn để tiết kiệm diện tích màn hình.
+- ⚡ **Tối ưu hiển thị Stats Panel**: 
+  - Thiết kế lại các thẻ thống kê nhỏ gọn hơn, phù hợp với nhiều độ phân giải.
+  - Hỗ trợ cuộn dọc (`scroll`) tự động khi danh sách chỉ số vượt quá chiều cao màn hình.
+- 🔧 **Cải thiện UI/UX**: Tinh chỉnh khoảng cách, icon và hiệu ứng chuyển cảnh mượt mà hơn.
 
 ### v2.3 — 2026-04-18
 > **Tính năng Bù Phép Drag-Drop hoàn chỉnh**
@@ -74,11 +75,11 @@ Tùy biến không gian làm việc theo sở thích với 6 bộ giao diện đ
 
 | 🌑 Dark Mode | ☀️ Light Mode | 🌸 Spring Theme |
 | :---: | :---: | :---: |
-| ![Dark](attendance-extension/video/dark.png) | ![Light](attendance-extension/video/light.png) | ![Spring](attendance-extension/video/theme-spring.png) |
+| ![Dark](video/dark.png) | ![Light](video/light.png) | ![Spring](video/theme-spring.png) |
 
 | 🌻 Summer Theme | 🍂 Autumn Theme | ❄️ Winter Theme |
 | :---: | :---: | :---: |
-| ![Summer](attendance-extension/video/theme-summer.png) | ![Autumn](attendance-extension/video/theme-autumn.png) | ![Winter](attendance-extension/video/theme-winter.png) |
+| ![Summer](video/theme-summer.png) | ![Autumn](video/theme-autumn.png) | ![Winter](video/theme-winter.png) |
 
 ### 4. 📊 Tương Tác Dữ Liệu Trực Quan
 - **Stats Panel Mở Rộng**: Theo dõi mọi chỉ số quan trọng tại một nơi: Ngày công, Đi trễ, Về sớm, OT 150%/200%, Công thực tế, Công tính lương và Công nhật.
@@ -92,11 +93,11 @@ Tùy biến không gian làm việc theo sở thích với 6 bộ giao diện đ
 
 | Chức năng | Minh họa | Đặc điểm |
 | :--- | :---: | :--- |
-| **Chi tiết ngày** | ![Detail](attendance-extension/video/day-detail.png) | Hiển thị đầy đủ giờ quẹt thẻ, tên ca, trạng thái đơn từ trong ngày. |
-| **Tạo đơn mới** | ![Create](attendance-extension/video/create-a-request.png) | Giao diện form điền sẵn (Auto-fill) thông minh, hỗ trợ tìm kiếm người duyệt nhanh. |
-| **Quản lý đơn** | ![Delete](attendance-extension/video/delete-a-request.png) | Xem trạng thái duyệt và cho phép xóa đơn trực tiếp ngay tại popup chi tiết. |
-| **Chọn tháng** | ![Picker](attendance-extension/video/pickerMonth.png) | Popup chọn tháng trực quan, hỗ trợ quay lại năm nhanh và chuyển về "Hôm nay". |
-| **Bù phép Drag-Drop** | *(xem demo gif)* | Kéo ngày OT thả vào ngày nghỉ → tạo 2 đơn NP+BN liên kết tự động. *(Mới v2.3)* |
+| **Chi tiết ngày** | ![Detail](video/day-detail.png) | Hiển thị đầy đủ giờ quẹt thẻ, tên ca, trạng thái đơn từ trong ngày. |
+| **Tạo đơn mới** | ![Create](video/create-a-request.png) | Giao diện form điền sẵn (Auto-fill) thông minh, hỗ trợ tìm kiếm người duyệt nhanh. |
+| **Quản lý đơn** | ![Delete](video/delete-a-request.png) | Xem trạng thái duyệt và cho phép xóa đơn trực tiếp ngay tại popup chi tiết. |
+| **Chọn tháng** | ![Picker](video/pickerMonth.png) | Popup chọn tháng trực quan, hỗ trợ quay lại năm nhanh và chuyển về "Hôm nay". |
+| **Bù phép Drag-Drop** | ![Picker](video/create-DBP.png) | Kéo ngày OT thả vào ngày nghỉ → tạo 2 đơn NP+BN liên kết tự động. *(Mới v2.3)* |
 
 ---
 
@@ -117,9 +118,9 @@ Cài đặt extension vô cùng đơn giản trong 4 bước:
 1. **Bước 1**: Truy cập quản lý Extension trên Edge/Chrome thông qua đường dẫn `edge://extensions`.
 2. **Bước 2**: Bật **Developer mode** (Chế độ nhà phát triển) ở góc màn hình.
 3. **Bước 3**: Nhấn nút **Load unpacked** (Tải bản tiện ích đã giải nén).
-4. **Bước 4**: Chọn thư mục `attendance-extension/` trong máy tính của bạn.
+4. **Bước 4**: Chọn thư mục `` trong máy tính của bạn.
 
-![Cài đặt](attendance-extension/video/giaoDienChinh.png)
+![Cài đặt](video/giaoDienChinh.png)
 *(Lưu ý: Luôn login vào hệ thống HRM trước khi sử dụng extension)*
 
 ---

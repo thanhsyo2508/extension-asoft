@@ -47,3 +47,6 @@ tmp/
 .cache/
 
 /data
+
+*.ps1
+.env
