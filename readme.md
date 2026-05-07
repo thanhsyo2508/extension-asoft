@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard Extension v2.3
+# 📅 Asoft Attendance Dashboard Dashboard v2.4
 
-[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)](https://img.shields.io/badge/version-2.3.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)](https://img.shields.io/badge/version-2.4.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -27,6 +27,15 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 ---
 
 ## 🆕 Changelog
+
+### v2.4 — 2026-05-07
+> **Mở rộng Dashboard Chỉ số công**
+
+- 📊 **Bổ sung 3 thẻ thống kê mới**: Tích hợp dữ liệu từ báo cáo `HRMT2320` để hiển thị:
+  - **Công thực tế**: Tổng số giờ làm việc thực tế dựa trên dữ liệu quẹt thẻ.
+  - **Công tính lương**: Số giờ công được ghi nhận để tính lương chính thức.
+  - **Công nhật**: Số giờ công nhật.
+- ⚡ **Tối ưu hiển thị Stats Panel**: Tự động cập nhật các chỉ số này mỗi khi load lại dữ liệu lịch.
 
 ### v2.3 — 2026-04-18
 > **Tính năng Bù Phép Drag-Drop hoàn chỉnh**
@@ -72,7 +81,8 @@ Tùy biến không gian làm việc theo sở thích với 6 bộ giao diện đ
 | ![Summer](attendance-extension/video/theme-summer.png) | ![Autumn](attendance-extension/video/theme-autumn.png) | ![Winter](attendance-extension/video/theme-winter.png) |
 
 ### 4. 📊 Tương Tác Dữ Liệu Trực Quan
-- **Highlight theo thẻ**: Nhấn vào các chỉ số "Nghỉ", "Trễ", "Sớm" ở Sidebar để lịch tự động làm nổi bật các ngày vi phạm tương ứng.
+- **Stats Panel Mở Rộng**: Theo dõi mọi chỉ số quan trọng tại một nơi: Ngày công, Đi trễ, Về sớm, OT 150%/200%, Công thực tế, Công tính lương và Công nhật.
+- **Highlight theo thẻ**: Nhấn vào các chỉ số "Nghỉ", "Trễ", "Sớm", "OT"... ở Sidebar để lịch tự động làm nổi bật các ngày vi phạm tương ứng.
 - **Bộ chọn Tháng/Năm Premium**: Điều hướng thời gian nhanh chóng với giao diện popup hiện đại thay vì dropdown mặc định nhàm chán.
 - **Xuất dữ liệu**: Hỗ trợ xuất báo cáo ngay lập tức cho tháng hiện tại.
 

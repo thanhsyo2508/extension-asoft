@@ -124,6 +124,27 @@ app.innerHTML = `
           <span class="stat-value" id="statOT200">0h</span>
         </div>
       </div>
+      <div class="stat-card" data-type="actual">
+        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">⚡</div>
+        <div class="stat-info">
+          <span class="stat-label">Công thực tế</span>
+          <span class="stat-value" id="statActualWork">0h</span>
+        </div>
+      </div>
+      <div class="stat-card" data-type="salary">
+        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">💰</div>
+        <div class="stat-info">
+          <span class="stat-label">Công tính lương</span>
+          <span class="stat-value" id="statSalaryWork">0h</span>
+        </div>
+      </div>
+      <div class="stat-card" data-type="daily">
+        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">📋</div>
+        <div class="stat-info">
+          <span class="stat-label">Công nhật</span>
+          <span class="stat-value" id="statDailyWork">0h</span>
+        </div>
+      </div>
     </div>
 
     <div class="main-content">
@@ -433,11 +454,20 @@ style.innerHTML = `
 #glassRoot.size-small .icon, #glassRoot.size-medium .icon { font-size: 10px; }
 #glassRoot.size-small .weekday, #glassRoot.size-medium .weekday { padding: 4px; font-size: 10px; }
 
-.stats-panel { display: flex; flex-direction: column; gap: 16px; }
+.stats-panel { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+  overflow-y: auto; 
+  padding-right: 4px;
+}
+.stats-panel::-webkit-scrollbar { width: 4px; }
+.stats-panel::-webkit-scrollbar-thumb { background: var(--border-glass); border-radius: 10px; }
+
 .stat-card {
   background: var(--card-bg); border: 1px solid var(--border-glass);
-  padding: 16px; border-radius: 18px;
-  display: flex; align-items: center; gap: 14px;
+  padding: 10px 14px; border-radius: 16px;
+  display: flex; align-items: center; gap: 10px;
   cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative; overflow: hidden;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -451,10 +481,10 @@ style.innerHTML = `
 .stat-card.active { border-color: var(--accent); background: rgba(59, 130, 246, 0.25); box-shadow: 0 0 20px var(--primary-glow); }
 
 .stat-icon {
-  width: 44px; height: 44px; border-radius: 12px;
+  width: 36px; height: 36px; border-radius: 10px;
   background: rgba(255,255,255,0.05);
   display: flex; align-items: center; justify-content: center;
-  font-size: 22px; border: 1px solid var(--border-glass);
+  font-size: 18px; border: 1px solid var(--border-glass);
   transition: all 0.3s;
 }
   .stat-icon.yellow { color: #f59e0b; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); }
@@ -462,9 +492,9 @@ style.innerHTML = `
   .stat-icon.purple { color: #a855f7; background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.2); }
 .stat-card:hover .stat-icon { transform: rotate(10deg) scale(1.1); background: rgba(255,255,255,0.1); }
 
-.stat-info { display: flex; flex-direction: column; gap: 2px; }
-.stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); opacity: 0.8; }
-.stat-value { font-size: 24px; font-weight: 800; color: var(--text-main); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat-info { display: flex; flex-direction: column; gap: 0px; }
+.stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); opacity: 0.8; }
+.stat-value { font-size: 20px; font-weight: 800; color: var(--text-main); font-variant-numeric: tabular-nums; line-height: 1.1; }
 .stat-value.warning { color: #fbbf24; }
 .stat-value.danger { color: #f87171; }
 
@@ -1166,7 +1196,7 @@ function toggleStatHighlight(type) {
 }
 // Add data-types to stat cards
 document.querySelectorAll('.stat-card').forEach((card, idx) => {
-  const types = ['work', 'late', 'early', 'ot150', 'ot200'];
+  const types = ['work', 'late', 'early', 'ot150', 'ot200', 'actual', 'salary', 'daily'];
   card.dataset.type = types[idx];
   card.onclick = () => toggleStatHighlight(types[idx]);
 });
@@ -1246,9 +1276,13 @@ async function processData(attendanceData, shiftData, leaveData, otData = null, 
     DepartmentName: userSource.DepartmentName || ""
   };
 
-  let ot150 = 0, ot200 = 0;
+  let ot150 = 0, ot200 = 0, actualWork = 0, salaryWork = 0, dailyWork = 0;
   if (otData && otData.Data && otData.Data.length > 0) {
     const r = otData.Data[0];
+    actualWork = r.GCTT || 0;
+    salaryWork = r.BS01 || 0;
+    dailyWork = r.GCN || 0;
+
     Object.keys(r).forEach(key => {
       if (key.startsWith("OT") && typeof r[key] === "number") {
         if (key === "OTT15") {
@@ -1260,7 +1294,7 @@ async function processData(attendanceData, shiftData, leaveData, otData = null, 
     });
   }
 
-  currentData = { map, shiftMap, requestMap, userMeta, stats: { workDays: Object.keys(map).length, late, early, ot150, ot200 }, currentMonthOT: otData };
+  currentData = { map, shiftMap, requestMap, userMeta, stats: { workDays: Object.keys(map).length, late, early, ot150, ot200, actualWork, salaryWork, dailyWork }, currentMonthOT: otData };
   return currentData;
 }
 
@@ -1281,6 +1315,9 @@ function render(monthStr) {
   document.getElementById("statEarly").innerText = stats.early;
   document.getElementById("statOT150").innerText = stats.ot150 + "h";
   document.getElementById("statOT200").innerText = stats.ot200 + "h";
+  document.getElementById("statActualWork").innerText = stats.actualWork + "h";
+  document.getElementById("statSalaryWork").innerText = stats.salaryWork + "h";
+  document.getElementById("statDailyWork").innerText = stats.dailyWork + "h";
   document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
 
   const firstDay = (new Date(y, m - 1, 1).getDay() + 6) % 7;
