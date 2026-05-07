@@ -83,6 +83,7 @@ app.innerHTML = `
         <span id="zoomLevel">100%</span>
         <button id="zoomIn" title="Phóng to">➕</button>
       </div>
+      <button id="minimizeBtn" title="Thu nhỏ/Phóng to">➖</button>
       <button id="closeBtn" title="Đóng">✕</button>
     </div>
   </div>
@@ -403,8 +404,43 @@ style.innerHTML = `
 .brand h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
 .icon-box { width: 40px; height: 40px; background: var(--primary-glow); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
 
-#closeBtn { background: rgba(255,255,255,0.2); border: none; color: #ff0000; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
-#closeBtn:hover { background: var(--danger); transform: rotate(90deg); }
+#minimizeBtn { background: rgba(255,255,255,0.1); border: none; color: var(--text-main); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+#minimizeBtn:hover { background: var(--accent); color: #fff; }
+
+#closeBtn { background: rgba(255,255,255,0.1); border: none; color: #ff0000; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+#closeBtn:hover { background: var(--danger); color: #fff; transform: rotate(90deg); }
+
+#glassRoot.minimized {
+  height: 60px !important;
+  width: 260px !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  padding: 12px 16px !important;
+  border-radius: 30px;
+}
+#glassRoot.minimized .dashboard-grid, 
+#glassRoot.minimized .resize-handle {
+  display: none !important;
+}
+#glassRoot.minimized .brand h1,
+#glassRoot.minimized .user-badge,
+#glassRoot.minimized .theme-selector,
+#glassRoot.minimized #exportBtn,
+#glassRoot.minimized .zoom-controls {
+  display: none !important;
+}
+#glassRoot.minimized .glass-header {
+  margin-bottom: 0;
+}
+#glassRoot.minimized .icon-box {
+  width: 32px; height: 32px; font-size: 16px;
+}
+#glassRoot.minimized .brand::after {
+  content: 'Dashboard';
+  font-size: 14px;
+  font-weight: 700;
+  margin-left: 8px;
+}
 
 .zoom-controls { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 20px; border: 1px solid var(--border-glass); }
 #attendance-ext[class*="theme-"] .zoom-controls { background: rgba(0,0,0,0.05); }
@@ -2492,7 +2528,19 @@ document.getElementById("nextMonth").onclick = () => {
   SELECTED_MONTH = formatMonth(d);
   load();
 };
-document.getElementById("closeBtn").onclick = () => app.remove();
+
+// Close button logic
+document.getElementById("closeBtn").onclick = () => {
+  app.remove();
+};
+
+// Minimize button logic
+document.getElementById("minimizeBtn").onclick = () => {
+  const root = document.getElementById("glassRoot");
+  const isMinimized = root.classList.toggle("minimized");
+  document.getElementById("minimizeBtn").innerText = isMinimized ? "⬜" : "➖";
+  document.getElementById("minimizeBtn").title = isMinimized ? "Phóng to" : "Thu nhỏ";
+};
 
 // Initialize: Load server config then load data
 loadServerConfig().then(() => {
