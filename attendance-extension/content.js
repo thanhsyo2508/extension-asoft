@@ -2158,13 +2158,31 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
 
   let currentKeyData = await loadInitialData();
 
-  const updateFields = async () => {
+  const refreshRequestFields = async () => {
     const type = typeSelect.value;
     let fieldsHtml = "";
 
     // Refresh key when type changes
     currentKeyData = await loadInitialData();
     const shift = typeSelect.dataset.shift || "";
+
+    // Tự động cập nhật Diễn giải và Lý do theo loại đơn (chỉ khi không có suggested smart logic hoặc user tự đổi)
+    const descInput = document.getElementById("requestDescription");
+    const reasonInput = document.getElementById("requestReason");
+    if (descInput && reasonInput && !suggested.reason) {
+      let autoText = "";
+      switch (type) {
+        case "DXNP": autoText = "Nghỉ phép năm"; break;
+        case "DXLTG": autoText = "Làm thêm giờ (Tăng ca)"; break;
+        case "DXBSQT": autoText = "Bổ sung quẹt thẻ"; break;
+        case "DXRN": autoText = "Đơn xin ra ngoài"; break;
+        case "DXDC": autoText = "Đổi ca làm việc"; break;
+      }
+      if (autoText) {
+        descInput.value = autoText;
+        reasonInput.value = autoText;
+      }
+    }
 
     const renderStepper = (id, val, min, max, step = 1) => `
       <div class="asf-stepper">
@@ -2312,8 +2330,8 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
     loadInitialData().then(k => currentKeyData = k);
   };
 
-  typeSelect.onchange = updateFields;
-  updateFields();
+  typeSelect.onchange = refreshRequestFields;
+  refreshRequestFields();
   cModal.style.display = "flex";
   document.getElementById("closeCreateModal").onclick = () => cModal.style.display = "none";
 
