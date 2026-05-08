@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard Dashboard v2.6
+# 📅 Asoft Attendance Dashboard Dashboard v2.7
 
-[![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)](https://img.shields.io/badge/version-2.6.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)](https://img.shields.io/badge/version-2.7.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.6.zip](asoft-attendance-v2.6.zip)
+[Tải về asoft-attendance-v2.7.zip](asoft-attendance-v2.7.zip)
 
 ---
 
@@ -27,6 +27,20 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 ---
 
 ## 🆕 Changelog
+
+### v2.7 — 2026-05-08
+> **Batch Attendance Request — Tạo đơn hàng loạt & Tối ưu UI**
+
+- 📅 **Batch Mode (Tạo đơn hàng loạt)**:
+    - Cho phép chọn nhiều ngày trên lịch để tạo đơn cùng lúc.
+    - Giao diện tương tác trực tiếp trên thẻ ngày (không dùng checkbox).
+    - Hỗ trợ **Tweak từng ngày**: Chỉnh sửa riêng biệt số giờ và lý do cho từng ngày trong lô đơn.
+    - Xử lý API tuần tự cho từng ngày, đảm bảo tính nhất quán dữ liệu.
+- 🔄 **Auto-fill thông minh**: Tự động điền Diễn giải và Lý do chi tiết dựa trên loại đơn được chọn khi chuyển đổi trong Modal.
+- 🛠️ **Refactor Code**: 
+    - Khắc phục lỗi `SyntaxError` do trùng lặp định danh hàm `updateFields`.
+    - Tối ưu hóa việc nạp dữ liệu khởi tạo (Approvers, Key, Shift) cho Modal.
+- 🎨 **UI/UX Polish**: Cải thiện hiển thị trạng thái (Status) khi gửi đơn hàng loạt và điều chỉnh layout nút bấm.
 
 ### v2.6 — 2026-05-08
 > **Tối ưu Đơn Ra Ngoài & Cải tiến Thống kê**
