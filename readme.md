@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard Dashboard v2.5
+# 📅 Asoft Attendance Dashboard Dashboard v2.6
 
-[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://img.shields.io/badge/version-2.5.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)](https://img.shields.io/badge/version-2.6.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.5.zip](asoft-attendance-v2.5.zip)
+[Tải về asoft-attendance-v2.6.zip](asoft-attendance-v2.6.zip)
 
 ---
 
@@ -27,6 +27,18 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 ---
 
 ## 🆕 Changelog
+
+### v2.6 — 2026-05-08
+> **Tối ưu Đơn Ra Ngoài & Cải tiến Thống kê**
+
+- 📝 **Refactor Đơn Xin Ra Ngoài (DXRN)**:
+    - Cập nhật giao diện mới hỗ trợ các trường: **Đi thẳng**, **Về thẳng**, **Yêu cầu xe** (kèm ghi chú), **Không ăn trưa**, **Tính OT**.
+    - Đồng bộ Payload với ERP hệ thống (sử dụng tiền tố `DOU/` và các trường `_DT` chính xác).
+- 🧠 **Dynamic Leave Balance**: Tự động gọi API `GetRemainingLeave` để lấy số dư phép thực tế điền vào đơn, tránh lỗi xác thực server.
+- 📊 **Nâng cấp Stats Panel**:
+    - Thay thế "Công nhật" bằng **Giờ công tiêu chuẩn** (`Số ngày công * 8`).
+    - Bổ sung chỉ số **Công thiếu** (`Tiêu chuẩn - Tính lương`) giúp nhân viên chủ động quản lý thời gian làm bù.
+- 🐞 **Bug Fixes**: Sửa lỗi không hiển thị đơn `DXRN` trên lịch do sai lệch định dạng ngày tháng trong detail view.
 
 ### v2.5 — 2026-05-07
 > **Tự động hóa Release & Quản lý Mã nguồn**
