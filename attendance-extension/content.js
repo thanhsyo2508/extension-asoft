@@ -139,11 +139,18 @@ app.innerHTML = `
           <span class="stat-value" id="statSalaryWork">0h</span>
         </div>
       </div>
-      <div class="stat-card" data-type="daily">
+      <div class="stat-card" data-type="standard">
         <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">📋</div>
         <div class="stat-info">
-          <span class="stat-label">Công nhật</span>
-          <span class="stat-value" id="statDailyWork">0h</span>
+          <span class="stat-label">Giờ công tiêu chuẩn</span>
+          <span class="stat-value" id="statStandardWork">0h</span>
+        </div>
+      </div>
+      <div class="stat-card" data-type="deficit">
+        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">⚠️</div>
+        <div class="stat-info">
+          <span class="stat-label">Công thiếu</span>
+          <span class="stat-value danger" id="statDeficitWork">0h</span>
         </div>
       </div>
     </div>
@@ -783,14 +790,21 @@ const UTILS = {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
     const getVal = (cls) => doc.querySelector(`.${cls}`)?.innerText?.trim() || "N/A";
+    const getValAny = (classes) => {
+      for (const c of classes) {
+        const v = doc.querySelector(`.${c}`)?.innerText?.trim();
+        if (v && v !== "N/A") return v;
+      }
+      return "N/A";
+    };
 
     return {
       requestType: getVal("RequestTypeID"),
       applicationID: getVal("ApplicationID"),
       description: getVal("Description"),
-      fromDate: getVal("RequestFromDate"),
-      toDate: getVal("RequestToDate"),
-      date: getVal("Date"), // For DXBSQT
+      fromDate: getValAny(["RequestFromDate", "RequestFromDate_DT", "Date"]),
+      toDate: getValAny(["RequestToDate", "RequestToDate_DT", "Date"]),
+      date: getVal("Date"),
       dailyHours: getVal("DailyHours"),
       reason: getVal("Reason"),
       status: getVal("StatusName"),
@@ -1256,7 +1270,7 @@ function toggleStatHighlight(type) {
 }
 // Add data-types to stat cards
 document.querySelectorAll('.stat-card').forEach((card, idx) => {
-  const types = ['work', 'late', 'early', 'ot150', 'ot200', 'actual', 'salary', 'daily'];
+  const types = ['work', 'late', 'early', 'ot150', 'ot200', 'actual', 'salary', 'standard', 'deficit'];
   card.dataset.type = types[idx];
   card.onclick = () => toggleStatHighlight(types[idx]);
 });
@@ -1310,12 +1324,12 @@ async function processData(attendanceData, shiftData, leaveData, otData = null, 
     let startDay, endDay;
 
     if (d.fromDate !== "N/A") {
-      const from = d.fromDate.split("/");
-      const to = d.toDate.split("/");
-      startDay = parseInt(from[0]);
-      endDay = parseInt(to[0]);
+      // Chấp nhận cả định dạng "05/05/2026" hoặc "05/05/2026 08:00:00"
+      const fromDayPart = d.fromDate.split(" ")[0];
+      const toDayPart = d.toDate.split(" ")[0];
+      startDay = parseInt(fromDayPart.split("/")[0]);
+      endDay = parseInt(toDayPart.split("/")[0]);
     } else if (d.date !== "N/A") {
-      // Handle format: "28/02/2026 08:00:00"
       const dayPart = d.date.split(" ")[0];
       startDay = endDay = parseInt(dayPart.split("/")[0]);
     }
@@ -1354,7 +1368,19 @@ async function processData(attendanceData, shiftData, leaveData, otData = null, 
     });
   }
 
-  currentData = { map, shiftMap, requestMap, userMeta, stats: { workDays: Object.keys(map).length, late, early, ot150, ot200, actualWork, salaryWork, dailyWork }, currentMonthOT: otData };
+  const workDays = Object.keys(map).length;
+  const standardWork = workDays * 8;
+  const deficitWork = Math.max(0, standardWork - salaryWork);
+
+  currentData = { 
+    map, shiftMap, requestMap, userMeta, 
+    stats: { 
+      workDays, late, early, ot150, ot200, 
+      actualWork, salaryWork, dailyWork,
+      standardWork, deficitWork
+    }, 
+    currentMonthOT: otData 
+  };
   return currentData;
 }
 
@@ -1377,7 +1403,8 @@ function render(monthStr) {
   document.getElementById("statOT200").innerText = stats.ot200 + "h";
   document.getElementById("statActualWork").innerText = stats.actualWork + "h";
   document.getElementById("statSalaryWork").innerText = stats.salaryWork + "h";
-  document.getElementById("statDailyWork").innerText = stats.dailyWork + "h";
+  document.getElementById("statStandardWork").innerText = stats.standardWork + "h";
+  document.getElementById("statDeficitWork").innerText = stats.deficitWork.toFixed(2) + "h";
   document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
 
   const firstDay = (new Date(y, m - 1, 1).getDay() + 6) % 7;
