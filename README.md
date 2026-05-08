@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard Dashboard v2.7
+# 📅 Asoft Attendance Dashboard Dashboard v2.8
 
-[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)](https://img.shields.io/badge/version-2.7.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.8.0-blue.svg)](https://img.shields.io/badge/version-2.8.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.7.zip](asoft-attendance-v2.7.zip)
+[Tải về asoft-attendance-v2.8.zip](asoft-attendance-v2.8.zip)
 
 ---
 
@@ -27,6 +27,16 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 ---
 
 ## 🆕 Changelog
+
+### v2.8 — 2026-05-08
+> **Refactor Batch Request & Logic Optimization**
+
+- ⚡ **Tối ưu Tạo đơn hàng loạt (Batch Mode)**:
+    - Cấu trúc lại logic lấy dữ liệu theo từng dòng (`batch-row`), giúp mã nguồn gọn gàng và dễ bảo trì hơn.
+    - Hỗ trợ fallback thông minh giữa chế độ đơn lẻ và chế độ hàng loạt cho mọi loại đơn (DXNP, DXLTG, DXRN, DXBSQT, DXDC).
+- 🔄 **Chuẩn hóa Shift ID**: Tự động chuẩn hóa mã ca làm việc (normalizeShiftId) khi thực hiện bù phép, tránh lỗi sai định dạng từ server.
+- 🛠️ **Cải tiến DXRN trong Batch Mode**: Bổ sung đầy đủ các trường thông tin (DailyHours, TotalTime) cho đơn xin ra ngoài khi tạo hàng loạt.
+- 🩹 **Bug Fixes**: Sửa lỗi lấy giá trị giờ quẹt thẻ (Swipe Time) không chính xác trong một số trường hợp tạo đơn bổ sung quẹt thẻ hàng loạt.
 
 ### v2.7 — 2026-05-08
 > **Batch Attendance Request — Tạo đơn hàng loạt & Tối ưu UI**

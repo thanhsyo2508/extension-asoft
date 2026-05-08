@@ -753,6 +753,9 @@ button, .nav-btn, .mp-month-btn, .mp-today-btn, .theme-selector button, .month-d
   transition: all 0.2s ease;
   filter: grayscale(0.5);
 }
+.calendar-grid.batch-active {
+  gap: 9px;
+}
 .batch-active .day.selected {
   border: 3px solid var(--accent) !important;
   opacity: 1 !important;
@@ -887,6 +890,90 @@ button, .nav-btn, .mp-month-btn, .mp-today-btn, .theme-selector button, .month-d
   animation: fadeIn 0.2s;
 }
 
+/* BATCH TABLE ROWS — compact */
+.batch-rows-table {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 10px;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.batch-rows-table::-webkit-scrollbar { width: 3px; }
+.batch-rows-table::-webkit-scrollbar-thumb { background: var(--border-glass); border-radius: 10px; }
+.batch-row {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  transition: border-color 0.2s, background 0.2s;
+  min-height: 38px;
+}
+.batch-row:hover { border-color: var(--accent); background: rgba(59,130,246,0.06); }
+.batch-row-date {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  min-width: 68px;
+}
+.batch-row-ot-badge {
+  font-size: 10px;
+  background: rgba(139,92,246,0.18);
+  color: #a78bfa;
+  border: 1px solid rgba(139,92,246,0.25);
+  border-radius: 20px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.batch-row-fields {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.batch-row-fields .form-group { margin-bottom: 0; }
+.batch-row-fields .form-control {
+  height: 28px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+.batch-row-fields select.form-control { padding-right: 22px; background-size: 12px; }
+.batch-row-fields input[type=number].form-control { width: 58px; }
+.batch-row-reason {
+  flex: 2;
+  min-width: 130px;
+}
+.batch-row-reason .form-control {
+  height: 28px;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+.batch-row-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 4px;
+  border-radius: 5px;
+  transition: color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+.batch-row-remove:hover { color: var(--danger); background: rgba(239,68,68,0.12); }
+/* Compact stepper inside batch rows */
+.batch-row .asf-stepper { height: 28px; }
+.batch-row .asf-stepper button { width: 22px; font-size: 14px; }
+.batch-row .asf-stepper span.step-val { font-size: 12px; min-width: 22px; }
+.batch-row .time-picker-row { gap: 3px; }
+.batch-row .sep { font-size: 11px; }
+
 /* BATCH MODE */
 .day.selected {
   border: 2px solid var(--accent) !important;
@@ -967,6 +1054,11 @@ const SHIFT_LIST = [
   { id: "CA01 - 12:45", text: "CA01 (12:45)" },
   { id: "CA02 - 22:00", text: "CA02 (22:00)" }
 ];
+const DEFAULT_SHIFT_ID = SHIFT_LIST[0].id;
+const normalizeShiftId = (shiftId) => {
+  const normalized = (shiftId || "").trim();
+  return SHIFT_LIST.some(s => s.id === normalized) ? normalized : DEFAULT_SHIFT_ID;
+};
 
 const UTILS = {
   parseTime: t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; },
@@ -1651,7 +1743,8 @@ function render(monthStr) {
     cell.oncontextmenu = (e) => {
       e.preventDefault();
       if (!IS_BATCH_MODE) {
-        toggleBatchMode();
+        toggleBatchMode({ initialSelection: { d, m, y } });
+      } else {
         toggleDateSelection(d, m, y, cell);
       }
     };
@@ -1759,10 +1852,13 @@ function render(monthStr) {
   updateBatchFloatingActions();
 }
 
-function toggleBatchMode() {
+function toggleBatchMode(options = {}) {
+  const { initialSelection = null } = options;
   IS_BATCH_MODE = !IS_BATCH_MODE;
   if (!IS_BATCH_MODE) {
     SELECTED_DATES = [];
+  } else if (initialSelection) {
+    SELECTED_DATES = [initialSelection];
   }
   render(SELECTED_MONTH);
 }
@@ -1883,77 +1979,190 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
   statusDiv.style.display = "none";
 
   if (isBatch) {
-    // Add date list below title
-    let dateList = cModal.querySelector(".batch-date-list");
-    if (!dateList) {
-      dateList = document.createElement("div");
-      dateList.className = "batch-date-list";
-      cTitle.parentNode.insertAdjacentElement('afterend', dateList);
-    }
-    const renderModalDateList = () => {
-      dateList.innerHTML = batchDates.map((dt, idx) => `
-        <div class="batch-date-tag-wrapper" id="batch-tag-${idx}">
-          <div class="batch-date-tag">
-            <span class="date-text">📅 ${dt.d.toString().padStart(2, '0')}/${dt.m.toString().padStart(2, '0')}</span>
-            <div class="tag-actions">
-              <span class="edit-tweak" data-idx="${idx}" title="Chỉnh sửa riêng cho ngày này">✏️</span>
-              <span class="remove" data-idx="${idx}" title="Bỏ chọn">✕</span>
-            </div>
-          </div>
-          <div class="batch-date-tweak-form" style="display: none;">
-            <div class="form-row-req" style="margin: 8px 0 0 0; gap: 8px;">
-               <div class="form-group" style="margin-bottom:0;"><label class="req-label">Số giờ</label><input type="number" class="form-control tweak-hours" value="${dt.overrideHours || 8}" step="0.5" style="padding:4px 8px; height:28px;"></div>
-               <div class="form-group" style="margin-bottom:0;"><label class="req-label">Lý do</label><input type="text" class="form-control tweak-reason" value="${dt.overrideReason || ''}" placeholder="Lý do riêng..." style="padding:4px 8px; height:28px;"></div>
-            </div>
-          </div>
-        </div>
-      `).join('');
+    // Remove old list if any
+    cModal.querySelector('.batch-date-list')?.remove();
+    cModal.querySelector('.batch-rows-table')?.remove();
 
-      dateList.querySelectorAll(".remove").forEach(btn => {
+    // Helper: get OT times from attendance data for a given day
+    const getOTTimesForDay = (dayNum) => {
+      const recs = (currentData.map[dayNum] || []).slice().sort();
+      if (recs.length < 2) return { startTime: '16:45', endTime: '18:45' };
+      const duration = UTILS.parseTime(recs[recs.length - 1]) - UTILS.parseTime(recs[0]);
+      if (duration < 240) return { startTime: '16:45', endTime: '18:45' };
+      const outTime = recs[recs.length - 1];
+      const outMins = UTILS.parseTime(outTime);
+      const roundedMins = Math.floor(outMins / 15) * 15;
+      const hh = Math.floor(roundedMins / 60).toString().padStart(2, '0');
+      const mm = (roundedMins % 60).toString().padStart(2, '0');
+      return { startTime: '16:45', endTime: `${hh}:${mm}` };
+    };
+
+    // Helper: render fields html for a single row given type
+    const renderRowFields = (type, dt, idx, shift) => {
+      const renderStepper = (id, val, min, max, step = 1) => `
+        <div class="asf-stepper">
+          <button type="button" onclick="const s=this.parentNode.querySelector('.step-val');s.innerText=String(Math.max(${min},Number(s.innerText)-${step})).padStart(2,'0')">&minus;</button>
+          <span class="step-val" id="${id}">${String(val).padStart(2,'0')}</span>
+          <button type="button" onclick="const s=this.parentNode.querySelector('.step-val');s.innerText=String(Math.min(${max},Number(s.innerText)+${step})).padStart(2,'0')">+</button>
+        </div>`;
+
+      if (type === 'DXNP') {
+        return `
+          <select class="form-control row-absent-type" data-idx="${idx}" title="Loại phép" style="min-width:130px">
+            ${ABSENT_TYPES.map(t => `<option value="${t.id}" ${dt.absentType === t.id ? 'selected' : ''}>${t.text}</option>`).join('')}
+          </select>
+          <input type="number" class="form-control row-hours" data-idx="${idx}" value="${dt.overrideHours || 8}" step="0.5" title="Số giờ" style="width:56px">
+          <select class="form-control row-shift" data-idx="${idx}" title="Ca làm việc" style="min-width:110px">
+            ${SHIFT_LIST.map(s => `<option value="${s.id}" ${normalizeShiftId(dt.shiftID || shift) === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
+          </select>`;
+      }
+
+      if (type === 'DXLTG') {
+        const ot = getOTTimesForDay(dt.d);
+        const [fH, fM] = (dt.startTime || ot.startTime).split(':');
+        const [tH, tM] = (dt.endTime || ot.endTime).split(':');
+        return `
+          <span style="font-size:11px;color:var(--text-muted)">Từ</span>
+          <div class="time-picker-row">${renderStepper(`row-fH-${idx}`, fH, 0, 23)}<span class="sep">:</span>${renderStepper(`row-fM-${idx}`, fM, 0, 45, 15)}</div>
+          <span style="font-size:11px;color:var(--text-muted)">đến</span>
+          <div class="time-picker-row">${renderStepper(`row-tH-${idx}`, tH, 0, 23)}<span class="sep">:</span>${renderStepper(`row-tM-${idx}`, tM, 0, 45, 15)}</div>
+          <select class="form-control row-shift" data-idx="${idx}" title="Ca" style="min-width:100px">
+            <option value="">-- Ca --</option>
+            ${SHIFT_LIST.map(s => `<option value="${s.id}" ${normalizeShiftId(dt.shiftID || shift) === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
+          </select>`;
+      }
+
+      if (type === 'DXBSQT') {
+        const [sH, sM] = (dt.swipeTime || '08:00').split(':');
+        return `
+          <div class="time-picker-row" title="Giờ bổ sung">${renderStepper(`row-sH-${idx}`, sH, 0, 23)}<span class="sep">:</span>${renderStepper(`row-sM-${idx}`, sM, 0, 45, 15)}</div>
+          <select class="form-control row-inout" data-idx="${idx}" title="Loại chấm" style="width:68px">
+            <option value="0" ${dt.inOut === 'V' ? 'selected' : ''}>Vào</option>
+            <option value="1" ${dt.inOut === 'R' ? 'selected' : ''}>Ra</option>
+          </select>
+          <select class="form-control row-shift" data-idx="${idx}" title="Ca" style="min-width:100px">
+            <option value="">-- Ca --</option>
+            ${SHIFT_LIST.map(s => `<option value="${s.id}" ${normalizeShiftId(dt.shiftID || shift) === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
+          </select>`;
+      }
+
+      if (type === 'DXRN') {
+        return `
+          <span style="font-size:11px;color:var(--text-muted)">Từ</span>
+          <div class="time-picker-row">${renderStepper(`row-fH-${idx}`, dt.fromH || '08', 0, 23)}<span class="sep">:</span>${renderStepper(`row-fM-${idx}`, dt.fromM || '00', 0, 45, 15)}</div>
+          <span style="font-size:11px;color:var(--text-muted)">đến</span>
+          <div class="time-picker-row">${renderStepper(`row-tH-${idx}`, dt.toH || '10', 0, 23)}<span class="sep">:</span>${renderStepper(`row-tM-${idx}`, dt.toM || '00', 0, 45, 15)}</div>
+          <input type="number" class="form-control row-hours" data-idx="${idx}" value="${dt.overrideHours || 2}" step="0.5" title="Số giờ" style="width:56px">`;
+      }
+
+      if (type === 'DXDC') {
+        return `
+          <select class="form-control row-new-shift" data-idx="${idx}" title="Đổi sang ca" style="min-width:110px">
+            ${SHIFT_LIST.map(s => `<option value="${s.id}" ${normalizeShiftId(dt.newShiftID) === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
+          </select>
+          <span style="font-size:11px;color:var(--text-muted)">←</span>
+          <select class="form-control row-shift" data-idx="${idx}" title="Ca cũ" style="min-width:110px">
+            ${SHIFT_LIST.map(s => `<option value="${s.id}" ${normalizeShiftId(dt.shiftID || shift) === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
+          </select>`;
+      }
+
+      return '';
+    };
+
+    // Build the batch rows table
+    const batchTable = document.createElement('div');
+    batchTable.className = 'batch-rows-table';
+    // Insert after modal-header
+    const modalBody = cModal.querySelector('.modal-body');
+    modalBody.insertBefore(batchTable, modalBody.firstChild);
+
+    const renderBatchTable = (type, shiftAuto) => {
+      batchTable.innerHTML = batchDates.map((dt, idx) => {
+        const dd = dt.d.toString().padStart(2,'0');
+        const mm = dt.m.toString().padStart(2,'0');
+        const dayRecs = (currentData.map[dt.d] || []).slice().sort();
+        const hasOT = dayRecs.length >= 2 && !isWorkday(dt.d, dt.m, dt.y);
+        const otBadge = (type === 'DXLTG' && hasOT)
+          ? `<span class="batch-row-ot-badge">⏱${dayRecs[0].slice(0,5)}–${dayRecs[dayRecs.length-1].slice(0,5)}</span>` : '';
+        return `
+          <div class="batch-row" id="batch-row-${idx}">
+            <span class="batch-row-date">${dd}/${mm} ${otBadge}</span>
+            <div class="batch-row-fields">${renderRowFields(type, dt, idx, shiftAuto)}</div>
+            <div class="batch-row-reason">
+              <input type="text" class="form-control row-reason" data-idx="${idx}"
+                value="${dt.overrideReason || ''}" placeholder="Lý do riêng...">
+            </div>
+            <button class="batch-row-remove" data-idx="${idx}" title="Bỏ ngày này">✕</button>
+          </div>`;
+      }).join('');
+
+      // Remove button events
+      batchTable.querySelectorAll('.batch-row-remove').forEach(btn => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const idx = parseInt(btn.dataset.idx);
           batchDates.splice(idx, 1);
           if (batchDates.length === 0) {
-            cModal.style.display = "none";
+            cModal.style.display = 'none';
             toggleBatchMode();
           } else {
             cTitle.innerText = `Tạo đơn hàng loạt (${batchDates.length} ngày)`;
-            renderModalDateList();
+            renderBatchTable(typeSelect.value, typeSelect.dataset.shift || '');
           }
           SELECTED_DATES = [...batchDates];
           render(SELECTED_MONTH);
         };
       });
 
-      dateList.querySelectorAll(".edit-tweak").forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const wrapper = btn.closest(".batch-date-tag-wrapper");
-          const form = wrapper.querySelector(".batch-date-tweak-form");
-          const isVisible = form.style.display === "block";
-          form.style.display = isVisible ? "none" : "block";
-          btn.innerText = isVisible ? "✏️" : "🔼";
-        };
+      // Sync reason input → batchDates
+      batchTable.querySelectorAll('.row-reason').forEach(inp => {
+        inp.oninput = () => { batchDates[parseInt(inp.dataset.idx)].overrideReason = inp.value; };
+      });
+      // Sync hours
+      batchTable.querySelectorAll('.row-hours').forEach(inp => {
+        inp.oninput = () => { batchDates[parseInt(inp.dataset.idx)].overrideHours = inp.value; };
+      });
+      // Sync absent type
+      batchTable.querySelectorAll('.row-absent-type').forEach(sel => {
+        sel.onchange = () => { batchDates[parseInt(sel.dataset.idx)].absentType = sel.value; };
+      });
+      // Sync shift
+      batchTable.querySelectorAll('.row-shift').forEach(sel => {
+        sel.onchange = () => { batchDates[parseInt(sel.dataset.idx)].shiftID = sel.value; };
+      });
+      // Sync new-shift (DXDC)
+      batchTable.querySelectorAll('.row-new-shift').forEach(sel => {
+        sel.onchange = () => { batchDates[parseInt(sel.dataset.idx)].newShiftID = sel.value; };
+      });
+      // Sync inout (DXBSQT)
+      batchTable.querySelectorAll('.row-inout').forEach(sel => {
+        sel.onchange = () => { batchDates[parseInt(sel.dataset.idx)].inOut = sel.value === '0' ? 'V' : 'R'; };
       });
 
-      // Update override data on input change
-      dateList.querySelectorAll(".tweak-hours").forEach(input => {
-        input.onchange = () => {
-          const idx = parseInt(input.closest(".batch-date-tag-wrapper").id.split("-")[2]);
-          batchDates[idx].overrideHours = input.value;
-        };
-      });
-      dateList.querySelectorAll(".tweak-reason").forEach(input => {
-        input.oninput = () => {
-          const idx = parseInt(input.closest(".batch-date-tag-wrapper").id.split("-")[2]);
-          batchDates[idx].overrideReason = input.value;
-        };
-      });
+      // Update title
+      cTitle.innerText = `Tạo đơn hàng loạt (${batchDates.length} ngày)`;
+      submitBtn.innerHTML = `<span class="icon">🚀</span> Gửi ${batchDates.length} đơn`;
     };
-    renderModalDateList();
+
+    // Re-render rows when type changes
+    if (cModal._batchTypeChangeHandler) {
+      typeSelect.removeEventListener('change', cModal._batchTypeChangeHandler);
+    }
+    cModal._batchTypeChangeHandler = () => {
+      renderBatchTable(typeSelect.value, typeSelect.dataset.shift || '');
+    };
+    typeSelect.addEventListener('change', cModal._batchTypeChangeHandler);
+
+    // Store renderBatchTable for use after loadInitialData sets shift
+    cModal._renderBatchTable = renderBatchTable;
   } else {
-    cModal.querySelector(".batch-date-list")?.remove();
+    cModal.querySelector('.batch-date-list')?.remove();
+    cModal.querySelector('.batch-rows-table')?.remove();
+    if (cModal._batchTypeChangeHandler) {
+      typeSelect.removeEventListener('change', cModal._batchTypeChangeHandler);
+      cModal._batchTypeChangeHandler = null;
+    }
+    cModal._renderBatchTable = null;
   }
 
   // --- SMART SUGGESTION LOGIC ---
@@ -2141,8 +2350,13 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
         searchInput.value = `${savedApprover.name} (${savedApprover.id})`;
       }
 
-      const shiftAuto = (currentShift || "").trim() || currentData.shiftMap[d] || "CA01 - 08:00";
+      const shiftAuto = normalizeShiftId((currentShift || "").trim() || currentData.shiftMap[d]);
       typeSelect.dataset.shift = shiftAuto;
+
+      // Batch: render rows table now that shift is known
+      if (isBatch && cModal._renderBatchTable) {
+        cModal._renderBatchTable(typeSelect.value, shiftAuto);
+      }
 
       submitBtn.disabled = false;
       submitBtn.innerHTML = isBatch ? `<span class="icon">🚀</span> Gửi ${batchDates.length} đơn` : '<span class="icon">🚀</span> Gửi đơn';
@@ -2165,6 +2379,12 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
     // Refresh key when type changes
     currentKeyData = await loadInitialData();
     const shift = typeSelect.dataset.shift || "";
+
+    // Batch mode: rows are rendered by renderBatchTable — skip dynamicFields
+    if (isBatch) {
+      dynamicFields.innerHTML = "";
+      return;
+    }
 
     // Tự động cập nhật Diễn giải và Lý do theo loại đơn (chỉ khi không có suggested smart logic hoặc user tự đổi)
     const descInput = document.getElementById("requestDescription");
@@ -2416,94 +2636,117 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
           IsOnTripOT: "6,0", IsCompen: "6,0"
         };
 
-        const shiftVal = document.getElementById("shiftID")?.value || "";
-        if (type === "DXNP") {
-          const hours = Number(targetDate.overrideHours || document.getElementById("dailyHours").value);
-          const remainLeave = typeSelect.dataset.remainLeave || "0.0";
-          const otRemainLeave = typeSelect.dataset.otRemainLeave || "0.0";
-          baseData.AbsentTypeID = "7," + document.getElementById("absentType").value;
-          baseData.DailyHours = "8," + hours;
-          baseData.TotalTime = "8," + hours;
-          baseData.DaysRemained = "8," + remainLeave;
-          baseData.OTDaysRemained = "8," + otRemainLeave;
-          baseData.ShiftID = "9," + shiftVal;
-          if (targetDate.overrideReason) {
-            baseData.Description = "12," + targetDate.overrideReason;
-            baseData.Reason = "7," + targetDate.overrideReason;
-          }
-        } else if (type === "DXLTG" || type === "DXRN") {
-          const fH = document.getElementById("fromHour")?.innerText || "08";
-          const fM = document.getElementById("fromMin")?.innerText || "00";
-          const tH = document.getElementById("toHour")?.innerText || "17";
-          const tM = document.getElementById("toMin")?.innerText || "00";
+        // Helper: get per-row element value in batch mode, fallback to global selector in single mode
+        const rowEl = isBatch ? document.getElementById(`batch-row-${i}`) : null;
+        const rowSelect = (cls) => rowEl?.querySelector(`.${cls}`)?.value || '';
+        const rowStepVal = (id) => (isBatch
+          ? document.getElementById(`row-${id}-${i}`)?.innerText
+          : document.getElementById(id)?.innerText) || '00';
 
-          if (type === "DXLTG") {
-            baseData.FromTime = `13,${fH}:${fM}`;
-            baseData.ToTime = `13,${tH}:${tM}`;
-            baseData.ShiftID = "9," + shiftVal;
-            const otValue = Number(targetDate.overrideHours || (Number(tH) - Number(fH) + (Number(tM) - Number(fM)) / 60).toFixed(2));
-            baseData.OverTime = "8," + otValue;
-            baseData.TotalTime = "8," + otValue;
-            baseData.DailyHours = "8," + otValue;
-            const remainLeave = typeSelect.dataset.remainLeave || "0.0";
-            const otRemainLeave = typeSelect.dataset.otRemainLeave || "0.0";
-            baseData.DaysRemained = "8," + remainLeave;
-            baseData.OTDaysRemained = "8," + otRemainLeave;
-            if (targetDate.overrideReason) {
-              baseData.Description = "12," + targetDate.overrideReason;
-              baseData.Reason = "7," + targetDate.overrideReason;
-            }
-          } else {
-            const remainLeave = typeSelect.dataset.remainLeave || "0.0";
-            const otRemainLeave = typeSelect.dataset.otRemainLeave || "0.0";
-            baseData.DailyHours = "8," + (targetDate.overrideHours || "");
-            baseData.TotalTime = "8,0";
-            baseData.DaysRemained = "8," + remainLeave;
-            baseData.OTDaysRemained = "8," + otRemainLeave;
-            baseData.DivisionID = "7,";
+        const shiftVal = isBatch
+          ? (batchDates[i].shiftID || rowSelect('row-shift') || '')
+          : (document.getElementById('shiftID')?.value || '');
 
-            const goStr = document.getElementById("goStraight")?.checked ? "1" : "0";
-            const comeStr = document.getElementById("comeStraight")?.checked ? "1" : "0";
-            const askVeh = document.getElementById("askForVehicle")?.checked ? "1" : "0";
-            const noLunch = document.getElementById("noLunch")?.checked ? "1" : "0";
-            const isOT = document.getElementById("isOT")?.checked ? "1" : "0";
-            const vehNote = document.getElementById("vehicleNote")?.value || "";
+        if (type === 'DXNP') {
+          const hours = Number(
+            isBatch
+              ? (batchDates[i].overrideHours || rowEl?.querySelector('.row-hours')?.value || 8)
+              : (targetDate.overrideHours || document.getElementById('dailyHours').value)
+          );
+          const absentTypeVal = isBatch
+            ? (batchDates[i].absentType || rowSelect('row-absent-type') || 'NP')
+            : document.getElementById('absentType').value;
+          const remainLeave = typeSelect.dataset.remainLeave || '0.0';
+          const otRemainLeave = typeSelect.dataset.otRemainLeave || '0.0';
+          baseData.AbsentTypeID = '7,' + absentTypeVal;
+          baseData.DailyHours = '8,' + hours;
+          baseData.TotalTime = '8,' + hours;
+          baseData.DaysRemained = '8,' + remainLeave;
+          baseData.OTDaysRemained = '8,' + otRemainLeave;
+          baseData.ShiftID = '9,' + shiftVal;
+          const rowReason = isBatch ? batchDates[i].overrideReason : targetDate.overrideReason;
+          if (rowReason) { baseData.Description = '12,' + rowReason; baseData.Reason = '7,' + rowReason; }
 
-            baseData.GoStraight = "6," + goStr;
-            baseData.ComeStraight = "6," + comeStr;
-            baseData.IsSeri = "6," + isSeri;
-            baseData.AskForVehicle = "6," + askVeh;
-            baseData.HaveLunch = "6," + noLunch;
-            baseData.IsPreShiftOT = "6," + isOT;
-            baseData.UseVehicle = "7," + vehNote;
+        } else if (type === 'DXLTG') {
+          const fH = rowStepVal('fH');
+          const fM = rowStepVal('fM');
+          const tH = rowStepVal('tH');
+          const tM = rowStepVal('tM');
+          baseData.FromTime = `13,${fH}:${fM}`;
+          baseData.ToTime = `13,${tH}:${tM}`;
+          baseData.ShiftID = '9,' + shiftVal;
+          const otValue = Number(
+            isBatch
+              ? (batchDates[i].overrideHours || (Number(tH) - Number(fH) + (Number(tM) - Number(fM)) / 60).toFixed(2))
+              : (targetDate.overrideHours || (Number(tH) - Number(fH) + (Number(tM) - Number(fM)) / 60).toFixed(2))
+          );
+          baseData.OverTime = '8,' + otValue;
+          baseData.TotalTime = '8,' + otValue;
+          baseData.DailyHours = '8,' + otValue;
+          baseData.DaysRemained = '8,' + (typeSelect.dataset.remainLeave || '0.0');
+          baseData.OTDaysRemained = '8,' + (typeSelect.dataset.otRemainLeave || '0.0');
+          const rowReason = isBatch ? batchDates[i].overrideReason : targetDate.overrideReason;
+          if (rowReason) { baseData.Description = '12,' + rowReason; baseData.Reason = '7,' + rowReason; }
 
-            baseData.RequestFromDate_DT = `13,${tDateStr} ${fH}:${fM}:00`;
-            baseData.RequestToDate_DT = `13,${tDateStr} ${tH}:${tM}:00`;
-            if (targetDate.overrideReason) {
-              baseData.Description = "12," + targetDate.overrideReason;
-              baseData.Reason = "7," + targetDate.overrideReason;
-            }
+        } else if (type === 'DXRN') {
+          const fH = rowStepVal('fH');
+          const fM = rowStepVal('fM');
+          const tH = rowStepVal('tH');
+          const tM = rowStepVal('tM');
+          const remainLeave = typeSelect.dataset.remainLeave || '0.0';
+          const otRemainLeave = typeSelect.dataset.otRemainLeave || '0.0';
+          const hoursVal = isBatch
+            ? (batchDates[i].overrideHours || rowEl?.querySelector('.row-hours')?.value || '')
+            : (targetDate.overrideHours || '');
+          baseData.DailyHours = '8,' + hoursVal;
+          baseData.TotalTime = '8,0';
+          baseData.DaysRemained = '8,' + remainLeave;
+          baseData.OTDaysRemained = '8,' + otRemainLeave;
+          baseData.DivisionID = '7,';
+          if (!isBatch) {
+            baseData.GoStraight = '6,' + (document.getElementById('goStraight')?.checked ? '1' : '0');
+            baseData.ComeStraight = '6,' + (document.getElementById('comeStraight')?.checked ? '1' : '0');
+            baseData.AskForVehicle = '6,' + (document.getElementById('askForVehicle')?.checked ? '1' : '0');
+            baseData.HaveLunch = '6,' + (document.getElementById('noLunch')?.checked ? '1' : '0');
+            baseData.IsPreShiftOT = '6,' + (document.getElementById('isOT')?.checked ? '1' : '0');
+            baseData.UseVehicle = '7,' + (document.getElementById('vehicleNote')?.value || '');
           }
-        } else if (type === "DXBSQT") {
-          const sH = document.getElementById("swipeHour")?.innerText || "08";
-          const sM = document.getElementById("swipeMin")?.innerText || "00";
-          baseData.Date = "13," + tDateStr + " " + sH + ":" + sM + ":00";
-          baseData.InOutID = "7," + document.getElementById("inOutID").value;
-          baseData.ShiftID = "9,";
-          baseData.DailyHours = "8," + (targetDate.overrideHours || "");
-          baseData.TotalTime = "8,0";
-          if (targetDate.overrideReason) {
-            baseData.Description = "12," + targetDate.overrideReason;
-            baseData.Reason = "7," + targetDate.overrideReason;
-          }
-        } else if (type === "DXDC") {
-          const shiftValActual = await getShiftNow(currentData.userMeta?.EmployeeID, `${tY}-${tM.toString().padStart(2, '0')}-${tD.toString().padStart(2, '0')}`);
-          baseData.ShiftNow = "9," + shiftValActual;
-          baseData.ShiftID = "9," + document.getElementById("newShiftID").value;
-          if (targetDate.overrideReason) {
-            baseData.Description = "12," + targetDate.overrideReason;
-            baseData.Reason = "7," + targetDate.overrideReason;
-          }
+          baseData.IsSeri = '6,' + isSeri;
+          baseData.RequestFromDate_DT = `13,${tDateStr} ${fH}:${fM}:00`;
+          baseData.RequestToDate_DT = `13,${tDateStr} ${tH}:${tM}:00`;
+          const rowReason = isBatch ? batchDates[i].overrideReason : targetDate.overrideReason;
+          if (rowReason) { baseData.Description = '12,' + rowReason; baseData.Reason = '7,' + rowReason; }
+
+        } else if (type === 'DXBSQT') {
+          const sH = isBatch
+            ? (document.getElementById(`row-sH-${i}`)?.innerText || '08')
+            : (document.getElementById('swipeHour')?.innerText || '08');
+          const sM = isBatch
+            ? (document.getElementById(`row-sM-${i}`)?.innerText || '00')
+            : (document.getElementById('swipeMin')?.innerText || '00');
+          const inOutVal = isBatch
+            ? (batchDates[i].inOut === 'R' ? '1' : '0')
+            : (document.getElementById('inOutID')?.value || '0');
+          baseData.Date = `13,${tDateStr} ${sH}:${sM}:00`;
+          baseData.InOutID = '7,' + inOutVal;
+          baseData.ShiftID = '9,' + shiftVal;
+          baseData.DailyHours = '8,';
+          baseData.TotalTime = '8,0';
+          const rowReason = isBatch ? batchDates[i].overrideReason : targetDate.overrideReason;
+          if (rowReason) { baseData.Description = '12,' + rowReason; baseData.Reason = '7,' + rowReason; }
+
+        } else if (type === 'DXDC') {
+          const shiftValActual = await getShiftNow(
+            currentData.userMeta?.EmployeeID,
+            `${tY}-${tM.toString().padStart(2,'0')}-${tD.toString().padStart(2,'0')}`
+          );
+          const newShiftVal = isBatch
+            ? (batchDates[i].newShiftID || rowSelect('row-new-shift') || '')
+            : (document.getElementById('newShiftID')?.value || '');
+          baseData.ShiftNow = '9,' + shiftValActual;
+          baseData.ShiftID = '9,' + newShiftVal;
+          const rowReason = isBatch ? batchDates[i].overrideReason : targetDate.overrideReason;
+          if (rowReason) { baseData.Description = '12,' + rowReason; baseData.Reason = '7,' + rowReason; }
         }
 
         const payload = { dataScreen: [[baseData]], voucherPackages: [] };
@@ -2555,9 +2798,9 @@ async function openCompSwapModal(srcDay, tgtDay) {
   const fmt = (d, m, y) => `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
   const srcDate = fmt(srcDay.d, srcDay.m, srcDay.y);
   const tgtDate = fmt(tgtDay.d, tgtDay.m, tgtDay.y);
-  const shiftDefault = 'CA01 - 08:00';
-  const shiftTgt = currentData.shiftMap[tgtDay.d] || shiftDefault;
-  const shiftSrc = currentData.shiftMap[srcDay.d] || shiftDefault;
+  const shiftDefault = DEFAULT_SHIFT_ID;
+  const shiftTgt = normalizeShiftId(currentData.shiftMap[tgtDay.d] || shiftDefault);
+  const shiftSrc = normalizeShiftId(currentData.shiftMap[srcDay.d] || shiftDefault);
   const empID = currentData.userMeta?.EmployeeID || 'default';
   const approverKey = `asoft-approver-${empID}`;
   // Tạo pairId sớm để nhúng vào lý do đơn ngay từ đầu
