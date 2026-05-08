@@ -244,8 +244,8 @@ Nếu gặp lỗi:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | 28/02/2026 | Initial release |
-| 2.0 | 02/03/2026 | Premium UI, Multi-theme, CSV Export, Interactive Stats, DXBSQT support |
+| 2.8 | 08/05/2026 | Bù Phép Drag-Drop, SVG Overlay, Smart Suggestion |
+| 2.9 | 08/05/2026 | Tự động phát hiện liên kết Bù Phép từ mô tả, Hiển thị Mã đơn từ (Application ID) |
 
 ---
 
@@ -270,4 +270,4 @@ Copyright © 2026. All rights reserved.
 ---
 
 **Made with ❤️ for HRM Efficiency**  
-Last updated: 02/03/2026 (v2.0)
+Last updated: 08/05/2026 (v2.9)

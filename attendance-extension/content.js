@@ -936,7 +936,7 @@ button, .nav-btn, .mp-month-btn, .mp-today-btn, .theme-selector button, .month-d
   align-items: center;
   gap: 5px;
   flex-wrap: wrap;
-  flex: 1;
+  flex: 2;
 }
 .batch-row-fields .form-group { margin-bottom: 0; }
 .batch-row-fields .form-control {
@@ -947,7 +947,7 @@ button, .nav-btn, .mp-month-btn, .mp-today-btn, .theme-selector button, .month-d
 .batch-row-fields select.form-control { padding-right: 22px; background-size: 12px; }
 .batch-row-fields input[type=number].form-control { width: 58px; }
 .batch-row-reason {
-  flex: 2;
+  flex: 1;
   min-width: 130px;
 }
 .batch-row-reason .form-control {
@@ -967,6 +967,29 @@ button, .nav-btn, .mp-month-btn, .mp-today-btn, .theme-selector button, .month-d
   flex-shrink: 0;
 }
 .batch-row-remove:hover { color: var(--danger); background: rgba(239,68,68,0.12); }
+
+.row-dxrn-extras {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.05);
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--border-glass);
+}
+.row-dxrn-extras label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+.row-dxrn-extras label:hover { background: rgba(255,255,255,0.1); }
+.row-dxrn-extras input[type=checkbox] { cursor: pointer; width: 14px; height: 14px; margin: 0; }
+
 /* Compact stepper inside batch rows */
 .batch-row .asf-stepper { height: 28px; }
 .batch-row .asf-stepper button { width: 22px; font-size: 14px; }
@@ -1561,7 +1584,7 @@ let currentData = { map: {}, shiftMap: {}, requestMap: {}, stats: {}, currentMon
 let dragSourceDay = null; // { d, m, y, times } — trạng thái drag bù phép
 
 async function processData(attendanceData, shiftData, leaveData, otData = null, currentUserInfo = null) {
-  const map = {}, shiftMap = {}, requestMap = {};
+  const map = {}, shiftMap = {}, requestMap = {}, bpPairs = {};
   let late = 0, early = 0;
 
   const userSource = attendanceData.Data?.[0] || shiftData.Data?.[0] || {};
@@ -1621,7 +1644,24 @@ async function processData(attendanceData, shiftData, leaveData, otData = null, 
         requestMap[day].push(d);
       }
     }
+    const pm = (d.description || "").match(/\[(bp_\d+_[a-z0-9]+)\]/);
+    if (pm) {
+      const pid = pm[1];
+      const [cy, cm] = SELECTED_MONTH.split("-").map(Number);
+      if (!bpPairs[pid]) bpPairs[pid] = { pairId: pid };
+      const dObj = { d: startDay, m: cm, y: cy };
+      if (d.requestType === 'DXNP' || d.requestType === 'DXP') bpPairs[pid].tgt = dObj;
+      else if (d.requestType === 'DXLTG') bpPairs[pid].src = dObj;
+    }
   });
+
+  const bpLinks = Object.values(bpPairs).filter(p => p.src && p.tgt).map(p => ({
+    pairId: p.pairId,
+    bnDay: p.src.d, bnMonth: p.src.m, bnYear: p.src.y,
+    npDay: p.tgt.d, npMonth: p.tgt.m, npYear: p.tgt.y,
+    bnDate: `${p.src.d.toString().padStart(2,'0')}/${p.src.m.toString().padStart(2,'0')}`,
+    npDate: `${p.tgt.d.toString().padStart(2,'0')}/${p.tgt.m.toString().padStart(2,'0')}`
+  }));
 
   const userMeta = {
     EmployeeID: eEmployeeID,
@@ -1654,7 +1694,7 @@ async function processData(attendanceData, shiftData, leaveData, otData = null, 
   const deficitWork = Math.max(0, standardWork - salaryWork);
 
   currentData = {
-    map, shiftMap, requestMap, userMeta,
+    map, shiftMap, requestMap, userMeta, bpLinks,
     stats: {
       workDays, late, early, ot150, ot200,
       actualWork, salaryWork, dailyWork,
@@ -1925,6 +1965,7 @@ function openModal(d, m, y, times, requests) {
                 <span class="req-status ${isPending ? 'pending' : ''}">${r.status}</span>
                 <h3>${r.description}</h3>
                 <div class="req-grid">
+                    <div class="req-field"><span class="req-label">Mã đơn</span><span class="req-val">${r.applicationID}</span></div>
                     <div class="req-field"><span class="req-label">Loại</span><span class="req-val">${r.requestType}</span></div>
                     <div class="req-field"><span class="req-label">Thời gian</span><span class="req-val">${r.dailyHours}h</span></div>
                     <div class="req-field"><span class="req-label">Lý do</span><span class="req-val">${r.reason}</span></div>
@@ -2052,7 +2093,13 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
           <div class="time-picker-row">${renderStepper(`row-fH-${idx}`, dt.fromH || '08', 0, 23)}<span class="sep">:</span>${renderStepper(`row-fM-${idx}`, dt.fromM || '00', 0, 45, 15)}</div>
           <span style="font-size:11px;color:var(--text-muted)">đến</span>
           <div class="time-picker-row">${renderStepper(`row-tH-${idx}`, dt.toH || '10', 0, 23)}<span class="sep">:</span>${renderStepper(`row-tM-${idx}`, dt.toM || '00', 0, 45, 15)}</div>
-          <input type="number" class="form-control row-hours" data-idx="${idx}" value="${dt.overrideHours || 2}" step="0.5" title="Số giờ" style="width:56px">`;
+          <div class="row-dxrn-extras">
+            <label title="Đi thẳng"><input type="checkbox" class="row-go-straight" data-idx="${idx}" ${dt.goStraight ? 'checked' : ''}>🚶</label>
+            <label title="Về thẳng"><input type="checkbox" class="row-come-straight" data-idx="${idx}" ${dt.comeStraight ? 'checked' : ''}>🏠</label>
+            <label title="Yêu cầu xe"><input type="checkbox" class="row-ask-car" data-idx="${idx}" ${dt.askCar ? 'checked' : ''}>🚗</label>
+            <label title="Không ăn trưa"><input type="checkbox" class="row-no-lunch" data-idx="${idx}" ${dt.noLunch !== false ? 'checked' : ''}>🍱</label>
+            <label title="Tính OT"><input type="checkbox" class="row-is-ot" data-idx="${idx}" ${dt.isOT ? 'checked' : ''}>⏱</label>
+          </div>`;
       }
 
       if (type === 'DXDC') {
@@ -2138,6 +2185,11 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
       batchTable.querySelectorAll('.row-inout').forEach(sel => {
         sel.onchange = () => { batchDates[parseInt(sel.dataset.idx)].inOut = sel.value === '0' ? 'V' : 'R'; };
       });
+      batchTable.querySelectorAll('.row-go-straight').forEach(inp => { inp.onchange = () => { batchDates[parseInt(inp.dataset.idx)].goStraight = inp.checked; }; });
+      batchTable.querySelectorAll('.row-come-straight').forEach(inp => { inp.onchange = () => { batchDates[parseInt(inp.dataset.idx)].comeStraight = inp.checked; }; });
+      batchTable.querySelectorAll('.row-ask-car').forEach(inp => { inp.onchange = () => { batchDates[parseInt(inp.dataset.idx)].askCar = inp.checked; }; });
+      batchTable.querySelectorAll('.row-no-lunch').forEach(inp => { inp.onchange = () => { batchDates[parseInt(inp.dataset.idx)].noLunch = inp.checked; }; });
+      batchTable.querySelectorAll('.row-is-ot').forEach(inp => { inp.onchange = () => { batchDates[parseInt(inp.dataset.idx)].isOT = inp.checked; }; });
 
       // Update title
       cTitle.innerText = `Tạo đơn hàng loạt (${batchDates.length} ngày)`;
@@ -2496,7 +2548,7 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
               <input type="checkbox" id="comeStraight"> Về thẳng
             </label>
           </div>
-          <div class="form-group" style="width: 80px;"><label class="req-label">Số giờ</label><input type="number" id="dailyHours" class="form-control" value="2" step="0.5"></div>
+
         </div>
         
         <div style="margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border-glass); display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
@@ -2695,10 +2747,10 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
           const tM = rowStepVal('tM');
           const remainLeave = typeSelect.dataset.remainLeave || '0.0';
           const otRemainLeave = typeSelect.dataset.otRemainLeave || '0.0';
-          const hoursVal = isBatch
-            ? (batchDates[i].overrideHours || rowEl?.querySelector('.row-hours')?.value || '')
-            : (targetDate.overrideHours || '');
-          baseData.DailyHours = '8,' + hoursVal;
+
+
+
+
           baseData.TotalTime = '8,0';
           baseData.DaysRemained = '8,' + remainLeave;
           baseData.OTDaysRemained = '8,' + otRemainLeave;
@@ -2710,6 +2762,12 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
             baseData.HaveLunch = '6,' + (document.getElementById('noLunch')?.checked ? '1' : '0');
             baseData.IsPreShiftOT = '6,' + (document.getElementById('isOT')?.checked ? '1' : '0');
             baseData.UseVehicle = '7,' + (document.getElementById('vehicleNote')?.value || '');
+          } else {
+            baseData.GoStraight = '6,' + (batchDates[i].goStraight ? '1' : '0');
+            baseData.ComeStraight = '6,' + (batchDates[i].comeStraight ? '1' : '0');
+            baseData.AskForVehicle = '6,' + (batchDates[i].askCar ? '1' : '0');
+            baseData.HaveLunch = '6,' + (batchDates[i].noLunch ? '1' : '0');
+            baseData.IsPreShiftOT = '6,' + (batchDates[i].isOT ? '1' : '0');
           }
           baseData.IsSeri = '6,' + isSeri;
           baseData.RequestFromDate_DT = `13,${tDateStr} ${fH}:${fM}:00`;
@@ -3269,7 +3327,12 @@ async function load() {
     // Load bp-links theo tài khoản
     const _empID = currentData.userMeta?.EmployeeID || 'default';
     const _bpKey = `asoft-bp-links-${_empID}`;
-    currentData.bpLinks = await new Promise(res => chrome.storage.sync.get([_bpKey], r => res(r[_bpKey] || [])));
+    const storedLinks = await new Promise(res => chrome.storage.sync.get([_bpKey], r => res(r[_bpKey] || [])));
+    const mergedLinks = [...(currentData.bpLinks || [])];
+    storedLinks.forEach(sl => {
+      if (!mergedLinks.find(ml => ml.pairId === sl.pairId)) mergedLinks.push(sl);
+    });
+    currentData.bpLinks = mergedLinks;
     render(SELECTED_MONTH);
   } catch (err) {
     console.error("Load Error:", err);

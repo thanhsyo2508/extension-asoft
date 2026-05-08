@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard Dashboard v2.8
+# 📅 Asoft Attendance Dashboard Dashboard v2.9
 
-[![Version](https://img.shields.io/badge/version-2.8.0-blue.svg)](https://img.shields.io/badge/version-2.8.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.9.0-blue.svg)](https://img.shields.io/badge/version-2.9.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.8.zip](asoft-attendance-v2.8.zip)
+[Tải về asoft-attendance-v2.9.zip](asoft-attendance-v2.9.zip)
 
 ---
 
