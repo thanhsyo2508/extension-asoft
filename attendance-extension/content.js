@@ -54,6 +54,8 @@ let currentZoom = config.zoom || 1;
 const formatMonth = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 let SELECTED_MONTH = formatMonth(new Date());
 let PICKER_YEAR = parseInt(SELECTED_MONTH.split("-")[0]);
+let SELECTED_DATES = []; // { d, m, y }
+let IS_BATCH_MODE = false;
 
 /* ========= MODERN UI & MODAL ========= */
 const app = document.createElement("div");
@@ -166,9 +168,14 @@ app.innerHTML = `
           </div>
           <button id="nextMonth" class="nav-btn">▶</button>
         </div>
-        <button id="loadBtn" class="btn-primary">
-          <span class="icon">🔄</span> Cập nhật
-        </button>
+        <div class="calendar-actions">
+          <button id="loadBtn" class="btn-primary">
+            <span class="icon">🔄</span> Cập nhật
+          </button>
+          <button id="batchModeBtn" class="btn-secondary" title="Chọn nhiều ngày để tạo đơn hàng loạt">
+            <span class="icon">📅+</span> Chọn nhiều
+          </button>
+        </div>
       </div>
 
       <div id="calendar" class="calendar-grid"></div>
@@ -731,6 +738,188 @@ button, .nav-btn, .mp-month-btn, .mp-today-btn, .theme-selector button, .month-d
 .day.drag-valid { outline: 1px dashed var(--primary); outline-offset: -2px; }
 .cs-card { background: rgba(255,255,255,0.03); border-radius: 14px; padding: 16px; }
 .cs-info-banner { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius: 12px; padding: 14px 16px; display: flex; gap: 14px; align-items: center; font-size: 13px; }
+
+/* BATCH MODE */
+.day.selected {
+  border: 2px solid var(--accent) !important;
+  background: rgba(59, 130, 246, 0.25) !important;
+  box-shadow: 0 0 20px var(--accent) !important;
+  transform: scale(1.04) !important;
+  z-index: 10;
+}
+.batch-active .day:not(.empty) {
+  border: 2px dashed var(--accent);
+  opacity: 0.5;
+  transition: all 0.2s ease;
+  filter: grayscale(0.5);
+}
+.batch-active .day.selected {
+  border: 3px solid var(--accent) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  transform: scale(1.06) translateY(-4px) !important;
+  box-shadow: 0 10px 25px var(--accent-glow) !important;
+}
+.batch-active .day:hover:not(.selected) {
+  opacity: 1;
+  filter: none;
+  background: rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px) scale(1.02);
+  border-style: solid;
+}
+/* Thêm indicator nhỏ ở góc cho ngày đã chọn */
+.batch-active .day.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: var(--accent);
+  color: white;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+.batch-floating-actions {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 12px;
+  z-index: 1000;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.btn-batch {
+  background: var(--accent);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+}
+.btn-batch.cancel { 
+  background: var(--card-bg); 
+  border: 1px solid var(--border-glass);
+  color: var(--text-main);
+  backdrop-filter: blur(10px); 
+}
+.btn-batch.cancel:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--danger);
+}
+#attendance-ext.theme-light .btn-batch.cancel:hover {
+  background: rgba(0,0,0,0.05);
+}
+.btn-batch:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
+
+.calendar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.batch-date-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  max-height: 120px;
+  overflow-y: auto;
+  border: 1px solid var(--border-glass);
+}
+.batch-date-tag {
+  background: var(--card-bg);
+  border: 1px solid var(--border-glass);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.batch-date-tag .remove {
+  cursor: pointer;
+  color: var(--danger);
+  font-weight: bold;
+}
+.batch-date-tag-wrapper {
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  padding: 6px 10px;
+  min-width: 120px;
+}
+.batch-date-tag {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+.tag-actions {
+  display: flex;
+  gap: 8px;
+}
+.edit-tweak {
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0.7;
+}
+.edit-tweak:hover { opacity: 1; }
+.batch-date-tweak-form {
+  border-top: 1px solid var(--border-glass);
+  margin-top: 6px;
+  animation: fadeIn 0.2s;
+}
+
+/* BATCH MODE */
+.day.selected {
+  border: 2px solid var(--accent) !important;
+  background: rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 0 0 15px var(--accent) !important;
+  transform: scale(1.05) !important;
+  z-index: 10;
+}
+.batch-floating-actions {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 12px;
+  z-index: 1000;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.btn-batch {
+  background: var(--accent);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+}
+.btn-batch.cancel { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
+.btn-batch:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
 `;
 document.head.appendChild(style);
 
@@ -1031,12 +1220,12 @@ async function getShiftNow(employeeID, date) {
 async function getRemainingLeave(employeeID) {
   try {
     let res = await api("/HRM/HRMF2360/GetRemainingLeave", { EmployeeID: employeeID }, true);
-    
+
     // Nếu res là chuỗi (do server trả về JSON string), cần parse thêm một lần nữa
     if (typeof res === 'string') {
       try { res = JSON.parse(res); } catch (e) { console.error("[Leave] Parse string fail:", e); }
     }
-    
+
     if (res && res.Table && res.Table[0]) {
       const d = res.Table[0].DaysRemained;
       const ot = res.Table[0].OTLeaveDaysRemained;
@@ -1046,9 +1235,9 @@ async function getRemainingLeave(employeeID) {
       };
     }
     return { days: "0.0", otDays: "0.0" };
-  } catch (e) { 
+  } catch (e) {
     console.error("[Leave] Error fetching:", e);
-    return { days: "0.0", otDays: "0.0" }; 
+    return { days: "0.0", otDays: "0.0" };
   }
 }
 
@@ -1372,14 +1561,14 @@ async function processData(attendanceData, shiftData, leaveData, otData = null, 
   const standardWork = workDays * 8;
   const deficitWork = Math.max(0, standardWork - salaryWork);
 
-  currentData = { 
-    map, shiftMap, requestMap, userMeta, 
-    stats: { 
-      workDays, late, early, ot150, ot200, 
+  currentData = {
+    map, shiftMap, requestMap, userMeta,
+    stats: {
+      workDays, late, early, ot150, ot200,
       actualWork, salaryWork, dailyWork,
       standardWork, deficitWork
-    }, 
-    currentMonthOT: otData 
+    },
+    currentMonthOT: otData
   };
   return currentData;
 }
@@ -1390,6 +1579,8 @@ function render(monthStr) {
   if (!cal) return;
   cal.innerHTML = "";
   cal.classList.remove('highlight-mode'); // Reset highlight on re-render
+  if (IS_BATCH_MODE) cal.classList.add('batch-active');
+  else cal.classList.remove('batch-active');
 
   // Update Month Display text
   const [y, m] = monthStr.split("-").map(Number);
@@ -1449,7 +1640,21 @@ function render(monthStr) {
     // Sử dụng !hasShift để xác định ngày nghỉ (Off-day)
     cell.className = `day ${!hasShift ? 'off-day' : ''} ${isOTDay ? 'ot-day' : ''} ${isToday ? 'today' : ''} ${isAbsent ? 'absent' : ''} ${isForgot ? 'forgot' : ''} ${hasPending ? 'pending-req' : ''} ${isNormalOnTime ? 'normal-work' : ''}`;
     if (isWeekend) cell.classList.add('weekend-date'); // Thêm class để track weekend nếu cần
-    cell.onclick = () => openModal(d, m, y, map[d], requests);
+    // cell.onclick = () => openModal(d, m, y, map[d], requests);
+    cell.onclick = () => {
+      if (IS_BATCH_MODE) {
+        toggleDateSelection(d, m, y, cell);
+      } else {
+        openModal(d, m, y, map[d], requests);
+      }
+    };
+    cell.oncontextmenu = (e) => {
+      e.preventDefault();
+      if (!IS_BATCH_MODE) {
+        toggleBatchMode();
+        toggleDateSelection(d, m, y, cell);
+      }
+    };
 
     // === DRAG SOURCE: ngày OT (làm việc vào ngày nghỉ) ===
     if (isOTDay) {
@@ -1492,6 +1697,9 @@ function render(monthStr) {
         openCompSwapModal(src, { d, m, y });
       });
     }
+
+    const isSelected = SELECTED_DATES.some(sd => sd.d === d && sd.m === m && sd.y === y);
+    if (isSelected) cell.classList.add("selected");
 
     let html = `<div class="day-num">${d}</div><div class="time-box">`;
     if (hasData) {
@@ -1541,7 +1749,64 @@ function render(monthStr) {
   }
   // Vẽ mũi tên sau khi render xong
   drawBPArrows(m, y);
+
+  // Update batch mode UI
+  const batchBtn = document.getElementById("batchModeBtn");
+  if (batchBtn) {
+    batchBtn.classList.toggle("btn-primary", IS_BATCH_MODE);
+    batchBtn.innerHTML = IS_BATCH_MODE ? '<span class="icon">✅</span> Đang chọn...' : '<span class="icon">📅+</span> Chọn nhiều';
+  }
+  updateBatchFloatingActions();
 }
+
+function toggleBatchMode() {
+  IS_BATCH_MODE = !IS_BATCH_MODE;
+  if (!IS_BATCH_MODE) {
+    SELECTED_DATES = [];
+  }
+  render(SELECTED_MONTH);
+}
+
+function toggleDateSelection(d, m, y, cell) {
+  const idx = SELECTED_DATES.findIndex(sd => sd.d === d && sd.m === m && sd.y === y);
+  if (idx > -1) {
+    SELECTED_DATES.splice(idx, 1);
+    cell.classList.remove("selected");
+  } else {
+    SELECTED_DATES.push({ d, m, y });
+    cell.classList.add("selected");
+  }
+  updateBatchFloatingActions();
+}
+
+function updateBatchFloatingActions() {
+  let actions = document.getElementById("batchFloatingActions");
+  if (!IS_BATCH_MODE || SELECTED_DATES.length === 0) {
+    actions?.remove();
+    return;
+  }
+
+  if (!actions) {
+    actions = document.createElement("div");
+    actions.id = "batchFloatingActions";
+    actions.className = "batch-floating-actions";
+    document.getElementById("glassRoot").appendChild(actions);
+  }
+
+  actions.innerHTML = `
+    <button class="btn-batch cancel" id="cancelBatch">Hủy</button>
+    <button class="btn-batch" id="startBatchRequest">
+      <span class="icon">🚀</span> Tạo đơn cho ${SELECTED_DATES.length} ngày
+    </button>
+  `;
+
+  document.getElementById("cancelBatch").onclick = toggleBatchMode;
+  document.getElementById("startBatchRequest").onclick = () => {
+    openCreateRequestModal(null, null, null, null, SELECTED_DATES);
+  };
+}
+
+document.getElementById("batchModeBtn").onclick = toggleBatchMode;
 
 /* ========= MODAL LOGIC ========= */
 const modal = document.getElementById("detailModal");
@@ -1594,7 +1859,14 @@ function openModal(d, m, y, times, requests) {
 }
 
 /* ========= CREATE REQUEST LOGIC ========= */
-async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
+async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates = []) {
+  const isBatch = batchDates.length > 0;
+  // If batch, use the first date as reference for settings
+  if (isBatch) {
+    d = batchDates[0].d;
+    m = batchDates[0].m;
+    y = batchDates[0].y;
+  }
   const cModal = document.getElementById("createRequestModal");
   const cTitle = document.getElementById("createModalTitle");
   const typeSelect = document.getElementById("requestTypeSelect");
@@ -1607,8 +1879,82 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
   const dateStr = `${d.toString().padStart(2, '0')}/${m.toString().padStart(2, '0')}/${y}`;
   const sqlDate = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
 
-  cTitle.innerText = `Tạo đơn - ${dateStr}`;
+  cTitle.innerText = isBatch ? `Tạo đơn hàng loạt (${batchDates.length} ngày)` : `Tạo đơn - ${dateStr}`;
   statusDiv.style.display = "none";
+
+  if (isBatch) {
+    // Add date list below title
+    let dateList = cModal.querySelector(".batch-date-list");
+    if (!dateList) {
+      dateList = document.createElement("div");
+      dateList.className = "batch-date-list";
+      cTitle.parentNode.insertAdjacentElement('afterend', dateList);
+    }
+    const renderModalDateList = () => {
+      dateList.innerHTML = batchDates.map((dt, idx) => `
+        <div class="batch-date-tag-wrapper" id="batch-tag-${idx}">
+          <div class="batch-date-tag">
+            <span class="date-text">📅 ${dt.d.toString().padStart(2, '0')}/${dt.m.toString().padStart(2, '0')}</span>
+            <div class="tag-actions">
+              <span class="edit-tweak" data-idx="${idx}" title="Chỉnh sửa riêng cho ngày này">✏️</span>
+              <span class="remove" data-idx="${idx}" title="Bỏ chọn">✕</span>
+            </div>
+          </div>
+          <div class="batch-date-tweak-form" style="display: none;">
+            <div class="form-row-req" style="margin: 8px 0 0 0; gap: 8px;">
+               <div class="form-group" style="margin-bottom:0;"><label class="req-label">Số giờ</label><input type="number" class="form-control tweak-hours" value="${dt.overrideHours || 8}" step="0.5" style="padding:4px 8px; height:28px;"></div>
+               <div class="form-group" style="margin-bottom:0;"><label class="req-label">Lý do</label><input type="text" class="form-control tweak-reason" value="${dt.overrideReason || ''}" placeholder="Lý do riêng..." style="padding:4px 8px; height:28px;"></div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      dateList.querySelectorAll(".remove").forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.idx);
+          batchDates.splice(idx, 1);
+          if (batchDates.length === 0) {
+            cModal.style.display = "none";
+            toggleBatchMode();
+          } else {
+            cTitle.innerText = `Tạo đơn hàng loạt (${batchDates.length} ngày)`;
+            renderModalDateList();
+          }
+          SELECTED_DATES = [...batchDates];
+          render(SELECTED_MONTH);
+        };
+      });
+
+      dateList.querySelectorAll(".edit-tweak").forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const wrapper = btn.closest(".batch-date-tag-wrapper");
+          const form = wrapper.querySelector(".batch-date-tweak-form");
+          const isVisible = form.style.display === "block";
+          form.style.display = isVisible ? "none" : "block";
+          btn.innerText = isVisible ? "✏️" : "🔼";
+        };
+      });
+
+      // Update override data on input change
+      dateList.querySelectorAll(".tweak-hours").forEach(input => {
+        input.onchange = () => {
+          const idx = parseInt(input.closest(".batch-date-tag-wrapper").id.split("-")[2]);
+          batchDates[idx].overrideHours = input.value;
+        };
+      });
+      dateList.querySelectorAll(".tweak-reason").forEach(input => {
+        input.oninput = () => {
+          const idx = parseInt(input.closest(".batch-date-tag-wrapper").id.split("-")[2]);
+          batchDates[idx].overrideReason = input.value;
+        };
+      });
+    };
+    renderModalDateList();
+  } else {
+    cModal.querySelector(".batch-date-list")?.remove();
+  }
 
   // --- SMART SUGGESTION LOGIC ---
   let suggested = { type: "DXNP", hours: 8, reason: "", startTime: "08:15", endTime: "17:30", swipeTime: "08:00", inOut: "V" };
@@ -1733,7 +2079,7 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
         getShiftNow(currentData.userMeta?.EmployeeID, sqlDate),
         getRemainingLeave(currentData.userMeta?.EmployeeID)
       ]);
-      
+
       typeSelect.dataset.remainLeave = leaveData.days;
       typeSelect.dataset.otRemainLeave = leaveData.otDays;
 
@@ -1799,14 +2145,14 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
       typeSelect.dataset.shift = shiftAuto;
 
       submitBtn.disabled = false;
-      submitBtn.innerHTML = '<span class="icon">🚀</span> Gửi đơn';
+      submitBtn.innerHTML = isBatch ? `<span class="icon">🚀</span> Gửi ${batchDates.length} đơn` : '<span class="icon">🚀</span> Gửi đơn';
       return keyData;
     } catch (e) {
       statusDiv.innerText = "Lỗi khi tải dữ liệu khởi tạo.";
       statusDiv.className = "status-box danger";
       statusDiv.style.display = "block";
       submitBtn.disabled = false;
-      submitBtn.innerHTML = '<span class="icon">🚀</span> Gửi đơn';
+      submitBtn.innerHTML = isBatch ? `<span class="icon">🚀</span> Gửi ${batchDates.length} đơn` : '<span class="icon">🚀</span> Gửi đơn';
     }
   };
 
@@ -1974,178 +2320,214 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
   submitBtn.onclick = async () => {
     if (!currentKeyData || !currentData.userMeta) return;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="icon">⏳</span> Đang gửi...';
     statusDiv.style.display = "none";
 
-    try {
-      const type = typeSelect.value;
-      const desc = document.getElementById("requestDescription").value;
-      const reason = document.getElementById("requestReason").value;
-      const place = document.getElementById("requestPlace").value;
-      const approver = approverSelect.value;
-      const selectedDeptID = document.getElementById("requestDepartmentSelect").value;
-      const selectedDept = DEPARTMENT_LIST.find(d => d.id === selectedDeptID);
-      let isSeri = "0"; // Default
+    const type = typeSelect.value;
+    const desc = document.getElementById("requestDescription").value;
+    const reason = document.getElementById("requestReason").value;
+    const place = document.getElementById("requestPlace").value;
+    const approver = approverSelect.value;
+    const selectedDeptID = document.getElementById("requestDepartmentSelect").value;
+    const selectedDept = DEPARTMENT_LIST.find(d => d.id === selectedDeptID);
+    let isSeri = "0";
 
-      const running = String(Number(currentKeyData.LastKey) + 1).padStart(4, "0");
-      const shortYear = y.toString().slice(-2);
-      const mmStr = m.toString().padStart(2, '0');
+    const datesToSubmit = isBatch ? batchDates : [{ d, m, y }];
+    let successCount = 0;
+    let failCount = 0;
 
-      let prefix = "DXP";
-      if (type === "DXLTG") prefix = "DOT";
-      else if (type === "DXDC" || type === "DXBSQT") prefix = "DQT";
-      else if (type === "DXRN") prefix = "DOU"; // Changed from DXP to DOU based on success case
+    for (let i = 0; i < datesToSubmit.length; i++) {
+      const targetDate = datesToSubmit[i];
+      const tD = targetDate.d, tM = targetDate.m, tY = targetDate.y;
+      const tDateStr = `${tD.toString().padStart(2, '0')}/${tM.toString().padStart(2, '0')}/${tY}`;
 
-      const appID = `${prefix}/${mmStr}/${shortYear}/${running}`;
+      submitBtn.innerHTML = `<span class="icon">⏳</span> Đang gửi (${i + 1}/${datesToSubmit.length})...`;
 
-      // FULL ERP PAYLOAD mapping (based on test_create.js)
-      const mappedType = type === "DXNP" ? "DXP" : type;
-      const baseData = {
-        RequestTypeID: "7," + mappedType,
-        ApplicationID: "7," + appID,
-        AbsentTypeID: "7,", // Default
-        Description: "12," + desc,
-        DepartmentID: "7," + selectedDeptID,
-        SectionID: "7,", SubsectionID: "7,", ProcessID: "7,",
-        EmployeeName: "7," + (currentData.userMeta.FullName || ""),
+      try {
+        // Fetch fresh key for each request in batch to avoid collisions
+        const keyData = (i === 0) ? currentKeyData : await getNewVoucherKey(type);
 
-        RequestFromDate: "9," + dateStr, RequestFromDate_DT: "13,",
-        RequestToDate: "9," + dateStr, RequestToDate_DT: "13,",
+        const running = String(Number(keyData.LastKey) + 1).padStart(4, "0");
+        const shortYear = tY.toString().slice(-2);
+        const mmStr = tM.toString().padStart(2, '0');
 
-        DailyHours: "8,0", TotalTime: "8,0.00", OverTime: "8,0.00", OverTimeNN: "8,0.00", OverTimeCompany: "8,0.00",
+        let prefix = "DXP";
+        if (type === "DXLTG") prefix = "DOT";
+        else if (type === "DXDC" || type === "DXBSQT") prefix = "DQT";
+        else if (type === "DXRN") prefix = "DOU";
 
-        ShiftNow: "9,", ShiftID: "9,", // Default
-        Reason: "7," + reason, Date: "13,", InOutID: "7,", Place: "7," + place, Note: "7,",
+        const appID = `${prefix}/${mmStr}/${shortYear}/${running}`;
+        const mappedType = type === "DXNP" ? "DXP" : type;
 
-        DaysRemained: "8,0.0", OTDaysRemained: "8,0.0", UseVehicle: "7,",
-        APK: "1,", APKDetail: "1,", FromToDate: "9,",
-        DivisionID: "7," + (currentData.userMeta.DivisionID || ""),
-        DepartmentName: "7," + (selectedDept ? selectedDept.name : ""),
-        SectionName: "7,", SubsectionName: "7,", ProcessName: "7,",
-        EmployeeID: "7," + (currentData.userMeta.EmployeeID || ""),
-        CreateUserID: "7,", CreateDate: "9,", LastModifyUserID: "7,", LastModifyDate: "9,",
+        const baseData = {
+          RequestTypeID: "7," + mappedType,
+          ApplicationID: "7," + appID,
+          AbsentTypeID: "7,",
+          Description: "12," + desc,
+          DepartmentID: "7," + selectedDeptID,
+          SectionID: "7,", SubsectionID: "7,", ProcessID: "7,",
+          EmployeeName: "7," + (currentData.userMeta.FullName || ""),
 
-        LastKey: "7," + currentKeyData.LastKey, LastKeyAPK: "7," + currentKeyData.LastKeyAPK,
-        FormStatus: "7,AddNew", Level: "7,",
-        TypeName: "7," + mappedType,
-        ApproveLevel: "7,1", ApprovingLevel: "7,", Type_9000: "7,",
-        GoStraightName: "7,", ComeStraightName: "7,", AbsentTypeName: "7,", ShiftName: "9,",
-        IsPreShiftOTName: "7,", InOut: "7,", AskForVehicleName: "7,", UseVehicleName: "7,",
-        HaveLunchName: "7,", IsOnTripOTName: "7,", StatusName: "7,",
+          RequestFromDate: "9," + tDateStr, RequestFromDate_DT: "13,",
+          RequestToDate: "9," + tDateStr, RequestToDate_DT: "13,",
 
-        Status: "6,0", ApprovalNotes: "7,", Day: "0,200",
-        ApprovePerson01ID: "7," + approver,
-        IsSeri: "6," + isSeri, GoStraight: "6,0", ComeStraight: "6,0",
-        IsPreShiftOT: "6,0", AskForVehicle: "6,0", HaveLunch: "6,0",
-        IsOnTripOT: "6,0", IsCompen: "6,0"
-      };
+          DailyHours: "8,0", TotalTime: "8,0.00", OverTime: "8,0.00", OverTimeNN: "8,0.00", OverTimeCompany: "8,0.00",
 
-      const shiftVal = document.getElementById("shiftID")?.value || "";
-      if (type === "DXNP") {
-        const hours = Number(document.getElementById("dailyHours").value);
-        const remainLeave = typeSelect.dataset.remainLeave || "0.0";
-        const otRemainLeave = typeSelect.dataset.otRemainLeave || "0.0";
-        baseData.AbsentTypeID = "7," + document.getElementById("absentType").value;
-        baseData.DailyHours = "8," + hours;
-        baseData.TotalTime = "8," + hours;
-        baseData.DaysRemained = "8," + remainLeave;
-        baseData.OTDaysRemained = "8," + otRemainLeave;
-        baseData.ShiftID = "9," + shiftVal;
-      } else if (type === "DXLTG" || type === "DXRN") {
-        const fH = document.getElementById("fromHour").innerText;
-        const fM = document.getElementById("fromMin").innerText;
-        const tH = document.getElementById("toHour").innerText;
-        const tM = document.getElementById("toMin").innerText;
+          ShiftNow: "9,", ShiftID: "9,",
+          Reason: "7," + reason, Date: "13,", InOutID: "7,", Place: "7," + place, Note: "7,",
 
-        if (type === "DXLTG") {
-          baseData.FromTime = `13,${fH}:${fM}`;
-          baseData.ToTime = `13,${tH}:${tM}`;
+          DaysRemained: "8,0.0", OTDaysRemained: "8,0.0", UseVehicle: "7,",
+          APK: "1,", APKDetail: "1,", FromToDate: "9,",
+          DivisionID: "7," + (currentData.userMeta.DivisionID || ""),
+          DepartmentName: "7," + (selectedDept ? selectedDept.name : ""),
+          SectionName: "7,", SubsectionName: "7,", ProcessName: "7,",
+          EmployeeID: "7," + (currentData.userMeta.EmployeeID || ""),
+          CreateUserID: "7,", CreateDate: "9,", LastModifyUserID: "7,", LastModifyDate: "9,",
+
+          LastKey: "7," + keyData.LastKey, LastKeyAPK: "7," + keyData.LastKeyAPK,
+          FormStatus: "7,AddNew", Level: "7,",
+          TypeName: "7," + mappedType,
+          ApproveLevel: "7,1", ApprovingLevel: "7,", Type_9000: "7,",
+          GoStraightName: "7,", ComeStraightName: "7,", AbsentTypeName: "7,", ShiftName: "9,",
+          IsPreShiftOTName: "7,", InOut: "7,", AskForVehicleName: "7,", UseVehicleName: "7,",
+          HaveLunchName: "7,", IsOnTripOTName: "7,", StatusName: "7,",
+
+          Status: "6,0", ApprovalNotes: "7,", Day: "0,200",
+          ApprovePerson01ID: "7," + approver,
+          IsSeri: "6," + isSeri, GoStraight: "6,0", ComeStraight: "6,0",
+          IsPreShiftOT: "6,0", AskForVehicle: "6,0", HaveLunch: "6,0",
+          IsOnTripOT: "6,0", IsCompen: "6,0"
+        };
+
+        const shiftVal = document.getElementById("shiftID")?.value || "";
+        if (type === "DXNP") {
+          const hours = Number(targetDate.overrideHours || document.getElementById("dailyHours").value);
+          const remainLeave = typeSelect.dataset.remainLeave || "0.0";
+          const otRemainLeave = typeSelect.dataset.otRemainLeave || "0.0";
+          baseData.AbsentTypeID = "7," + document.getElementById("absentType").value;
+          baseData.DailyHours = "8," + hours;
+          baseData.TotalTime = "8," + hours;
+          baseData.DaysRemained = "8," + remainLeave;
+          baseData.OTDaysRemained = "8," + otRemainLeave;
           baseData.ShiftID = "9," + shiftVal;
-          const otValue = (Number(tH) - Number(fH) + (Number(tM) - Number(fM)) / 60).toFixed(2);
-          baseData.OverTime = "8," + otValue;
-          baseData.TotalTime = "8," + otValue;
-          baseData.DailyHours = "8," + otValue;
-          const remainLeave = typeSelect.dataset.remainLeave || "0.0";
-          const otRemainLeave = typeSelect.dataset.otRemainLeave || "0.0";
-          baseData.DaysRemained = "8," + remainLeave;
-          baseData.OTDaysRemained = "8," + otRemainLeave;
-        } else {
-          const remainLeave = typeSelect.dataset.remainLeave || "0.0";
-          const otRemainLeave = typeSelect.dataset.otRemainLeave || "0.0";
-          baseData.DailyHours = "8,";
+          if (targetDate.overrideReason) {
+            baseData.Description = "12," + targetDate.overrideReason;
+            baseData.Reason = "7," + targetDate.overrideReason;
+          }
+        } else if (type === "DXLTG" || type === "DXRN") {
+          const fH = document.getElementById("fromHour")?.innerText || "08";
+          const fM = document.getElementById("fromMin")?.innerText || "00";
+          const tH = document.getElementById("toHour")?.innerText || "17";
+          const tM = document.getElementById("toMin")?.innerText || "00";
+
+          if (type === "DXLTG") {
+            baseData.FromTime = `13,${fH}:${fM}`;
+            baseData.ToTime = `13,${tH}:${tM}`;
+            baseData.ShiftID = "9," + shiftVal;
+            const otValue = Number(targetDate.overrideHours || (Number(tH) - Number(fH) + (Number(tM) - Number(fM)) / 60).toFixed(2));
+            baseData.OverTime = "8," + otValue;
+            baseData.TotalTime = "8," + otValue;
+            baseData.DailyHours = "8," + otValue;
+            const remainLeave = typeSelect.dataset.remainLeave || "0.0";
+            const otRemainLeave = typeSelect.dataset.otRemainLeave || "0.0";
+            baseData.DaysRemained = "8," + remainLeave;
+            baseData.OTDaysRemained = "8," + otRemainLeave;
+            if (targetDate.overrideReason) {
+              baseData.Description = "12," + targetDate.overrideReason;
+              baseData.Reason = "7," + targetDate.overrideReason;
+            }
+          } else {
+            const remainLeave = typeSelect.dataset.remainLeave || "0.0";
+            const otRemainLeave = typeSelect.dataset.otRemainLeave || "0.0";
+            baseData.DailyHours = "8," + (targetDate.overrideHours || "");
+            baseData.TotalTime = "8,0";
+            baseData.DaysRemained = "8," + remainLeave;
+            baseData.OTDaysRemained = "8," + otRemainLeave;
+            baseData.DivisionID = "7,";
+
+            const goStr = document.getElementById("goStraight")?.checked ? "1" : "0";
+            const comeStr = document.getElementById("comeStraight")?.checked ? "1" : "0";
+            const askVeh = document.getElementById("askForVehicle")?.checked ? "1" : "0";
+            const noLunch = document.getElementById("noLunch")?.checked ? "1" : "0";
+            const isOT = document.getElementById("isOT")?.checked ? "1" : "0";
+            const vehNote = document.getElementById("vehicleNote")?.value || "";
+
+            baseData.GoStraight = "6," + goStr;
+            baseData.ComeStraight = "6," + comeStr;
+            baseData.IsSeri = "6," + isSeri;
+            baseData.AskForVehicle = "6," + askVeh;
+            baseData.HaveLunch = "6," + noLunch;
+            baseData.IsPreShiftOT = "6," + isOT;
+            baseData.UseVehicle = "7," + vehNote;
+
+            baseData.RequestFromDate_DT = `13,${tDateStr} ${fH}:${fM}:00`;
+            baseData.RequestToDate_DT = `13,${tDateStr} ${tH}:${tM}:00`;
+            if (targetDate.overrideReason) {
+              baseData.Description = "12," + targetDate.overrideReason;
+              baseData.Reason = "7," + targetDate.overrideReason;
+            }
+          }
+        } else if (type === "DXBSQT") {
+          const sH = document.getElementById("swipeHour")?.innerText || "08";
+          const sM = document.getElementById("swipeMin")?.innerText || "00";
+          baseData.Date = "13," + tDateStr + " " + sH + ":" + sM + ":00";
+          baseData.InOutID = "7," + document.getElementById("inOutID").value;
+          baseData.ShiftID = "9,";
+          baseData.DailyHours = "8," + (targetDate.overrideHours || "");
           baseData.TotalTime = "8,0";
-          baseData.DaysRemained = "8," + remainLeave;
-          baseData.OTDaysRemained = "8," + otRemainLeave;
-          baseData.DivisionID = "7,"; // DivisionID is empty for DXRN
-
-          // DXRN specific fields
-          const goStr = document.getElementById("goStraight")?.checked ? "1" : "0";
-          const comeStr = document.getElementById("comeStraight")?.checked ? "1" : "0";
-          const askVeh = document.getElementById("askForVehicle")?.checked ? "1" : "0";
-          const noLunch = document.getElementById("noLunch")?.checked ? "1" : "0";
-          const isOT = document.getElementById("isOT")?.checked ? "1" : "0";
-          const vehNote = document.getElementById("vehicleNote")?.value || "";
-
-          baseData.GoStraight = "6," + goStr;
-          baseData.ComeStraight = "6," + comeStr;
-          baseData.IsSeri = "6," + isSeri;
-          baseData.AskForVehicle = "6," + askVeh;
-          baseData.HaveLunch = "6," + noLunch;
-          baseData.IsPreShiftOT = "6," + isOT;
-          baseData.UseVehicle = "7," + vehNote; // UseVehicle for "Chiều dùng xe"
-
-          // New structure: include _DT fields with full datetime
-          baseData.RequestFromDate_DT = `13,${dateStr} ${fH}:${fM}:00`;
-          baseData.RequestToDate_DT = `13,${dateStr} ${tH}:${tM}:00`;
+          if (targetDate.overrideReason) {
+            baseData.Description = "12," + targetDate.overrideReason;
+            baseData.Reason = "7," + targetDate.overrideReason;
+          }
+        } else if (type === "DXDC") {
+          const shiftValActual = await getShiftNow(currentData.userMeta?.EmployeeID, `${tY}-${tM.toString().padStart(2, '0')}-${tD.toString().padStart(2, '0')}`);
+          baseData.ShiftNow = "9," + shiftValActual;
+          baseData.ShiftID = "9," + document.getElementById("newShiftID").value;
+          if (targetDate.overrideReason) {
+            baseData.Description = "12," + targetDate.overrideReason;
+            baseData.Reason = "7," + targetDate.overrideReason;
+          }
         }
-      } else if (type === "DXBSQT") {
-        const sH = document.getElementById("swipeHour").innerText;
-        const sM = document.getElementById("swipeMin").innerText;
-        baseData.Date = "13," + dateStr + " " + sH + ":" + sM + ":00";
-        baseData.InOutID = "7," + document.getElementById("inOutID").value;
-        baseData.ShiftID = "9,";
-        baseData.DailyHours = "8,";
-        baseData.TotalTime = "8,0";
-        delete baseData.SwipeTime;
-      } else if (type === "DXDC") {
-        baseData.ShiftNow = "9," + shiftVal;
-        baseData.ShiftID = "9," + document.getElementById("newShiftID").value;
-      }
 
-      const payload = { dataScreen: [[baseData]], voucherPackages: [] };
-      console.log("[Submission] Sending Payload:", JSON.stringify(payload, null, 2));
-      let res = await submitVoucher(payload);
+        const payload = { dataScreen: [[baseData]], voucherPackages: [] };
+        let res = await submitVoucher(payload);
 
-      // Retry logic if duplicate ID
-      if (res.Status === 1 && res.Message && res.Message.includes("ApplicationID")) {
-        console.warn("[Submission] Duplicate ID detected, retrying with new key...");
-        const newKeyData = await getNewVoucherKey(type);
-        if (newKeyData && newKeyData.LastKey) {
-          const newRunning = String(Number(newKeyData.LastKey) + 1).padStart(4, "0");
-          const newAppID = `${prefix}/${mmStr}/${shortYear}/${newRunning}`;
-
-          baseData.ApplicationID = "7," + newAppID;
-          baseData.LastKey = "7," + newKeyData.LastKey;
-          baseData.LastKeyAPK = "7," + newKeyData.LastKeyAPK;
-
+        // Retry once for duplicate ApplicationID
+        if (res.Status === 1 && res.Message?.includes("ApplicationID")) {
+          const retryKey = await getNewVoucherKey(type);
+          const retryRunning = String(Number(retryKey.LastKey) + 1).padStart(4, "0");
+          baseData.ApplicationID = "7," + `${prefix}/${mmStr}/${shortYear}/${retryRunning}`;
+          baseData.LastKey = "7," + retryKey.LastKey;
+          baseData.LastKeyAPK = "7," + retryKey.LastKeyAPK;
           res = await submitVoucher({ dataScreen: [[baseData]], voucherPackages: [] });
         }
-      }
 
-      if (res.Status === 0 || res.UpdateSuccess) {
-        statusDiv.innerText = "Gửi đơn thành công!";
-        statusDiv.className = "status-box success";
-        statusDiv.style.display = "block";
-        setTimeout(() => { cModal.style.display = "none"; load(); }, 1500);
-      } else {
-        throw new Error(res.Message || "Lỗi server");
+        if (res.Status === 0 || res.UpdateSuccess) {
+          successCount++;
+        } else {
+          console.error(`[Batch] Failed for ${tDateStr}:`, res.Message);
+          failCount++;
+        }
+      } catch (err) {
+        console.error(`[Batch] Error for ${tDateStr}:`, err);
+        failCount++;
       }
-    } catch (e) {
-      statusDiv.innerText = "Lỗi: " + e.message;
+    }
+
+    if (successCount > 0) {
+      statusDiv.innerText = `Thành công ${successCount}/${datesToSubmit.length} đơn!` + (failCount > 0 ? ` (${failCount} lỗi)` : "");
+      statusDiv.className = "status-box success";
+      statusDiv.style.display = "block";
+      setTimeout(() => {
+        cModal.style.display = "none";
+        if (isBatch) toggleBatchMode(); // Exit batch mode
+        load();
+      }, 2000);
+    } else {
+      statusDiv.innerText = "Gửi đơn thất bại toàn bộ!";
       statusDiv.className = "status-box danger";
       statusDiv.style.display = "block";
       submitBtn.disabled = false;
-      submitBtn.innerHTML = '<span class="icon">🚀</span> Gửi đơn';
+      submitBtn.innerHTML = isBatch ? `<span class="icon">🚀</span> Thử lại` : '<span class="icon">🚀</span> Gửi đơn';
     }
   };
 }
