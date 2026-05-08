@@ -917,14 +917,14 @@ async function fetchAttendance(monthStr, employeeID) {
 
   // Sử dụng cấu trúc payload mở rộng chính xác như hệ thống Asoft để không bị lỗi hoặc trả về Data rỗng
   const template = `sort=&page=1&pageSize=200&group=&filter=&rdoFilter=1&FromDatePeriodControl=${encodeURIComponent(fromDate)}&ToDatePeriodControl=${encodeURIComponent(toDate)}&FromToDate_Content_DataType=9&FromToDate_Type_Fields=5&IsPeriod=0&FromDatePeriodControl_Type_Fields=5&ToDatePeriodControl_Type_Fields=5&FromDatePeriodControl_Content_DataType=13&ToDatePeriodControl_Content_DataType=13&CheckListPeriodControl_Type_Fields=4&CheckListPeriodControl_Content_DataType=13&DivisionID_Content_DataType=7&DivisionID_Type_Fields=4&DivisionID_HRMF2260=&DivisionID1_Content_DataType=7&DivisionID1_Type_Fields=1&DivisionID1_HRMF2260=&Period_Content_DataType=7&Period_Type_Fields=1&Period_HRMF2260=&FromDate_Content_DataType=9&FromDate_Type_Fields=5&FromDate_HRMF2260=&ToDate_Content_DataType=9&ToDate_Type_Fields=5&ToDate_HRMF2260=&DepartmentID1_Content_DataType=7&DepartmentID1_Type_Fields=3&DepartmentID1_HRMF2260=&View_Content_DataType=7&View_Type_Fields=1&View_HRMF2260=&CreateUserID_Content_DataType=7&CreateUserID_Type_Fields=1&CreateUserID_HRMF2260=&CreateDate_Content_DataType=13&CreateDate_Type_Fields=1&CreateDate_HRMF2260=&LastModifyUserID_Content_DataType=7&LastModifyUserID_Type_Fields=1&LastModifyUserID_HRMF2260=&LastModifyDate_Content_DataType=13&LastModifyDate_Type_Fields=1&LastModifyDate_HRMF2260=&EmployeeID_Content_DataType=7&EmployeeID_Type_Fields=1&EmployeeID_HRMF2260=${empID}&FullName_Content_DataType=7&FullName_Type_Fields=1&FullName_HRMF2260=&DepartmentID_Content_DataType=7&DepartmentID_Type_Fields=3&CheckInList=DepartmentID_HRMF2260&DepartmentID_HRMF2260_input=&DepartmentID_HRMF2260=&DepartmentName_Content_DataType=7&DepartmentName_Type_Fields=1&DepartmentName_HRMF2260=&AbsentCardNo_Content_DataType=7&AbsentCardNo_Type_Fields=1&AbsentCardNo_HRMF2260=&TranMonth_Content_DataType=4&TranMonth_Type_Fields=1&TranMonth_HRMF2260=&TranYear_Content_DataType=4&TranYear_Type_Fields=1&TranYear_HRMF2260=&AbsentDate_Content_DataType=7&AbsentDate_Type_Fields=1&AbsentDate_HRMF2260=&AbsentHour_Content_DataType=7&AbsentHour_Type_Fields=1&AbsentHour_HRMF2260=&args%5B0%5D.Key=ftype%5B%5D&args%5B0%5D.Value%5B0%5D=&args%5B0%5D.Value%5B1%5D=5&args%5B0%5D.Value%5B2%5D=5&args%5B0%5D.Value%5B3%5D=&args%5B0%5D.Value%5B4%5D=4&args%5B0%5D.Value%5B5%5D=1&args%5B0%5D.Value%5B6%5D=1&args%5B0%5D.Value%5B7%5D=5&args%5B0%5D.Value%5B8%5D=5&args%5B0%5D.Value%5B9%5D=3&args%5B0%5D.Value%5B10%5D=1&args%5B0%5D.Value%5B11%5D=1&args%5B0%5D.Value%5B12%5D=1&args%5B0%5D.Value%5B13%5D=1&args%5B0%5D.Value%5B14%5D=1&args%5B0%5D.Value%5B15%5D=1&args%5B0%5D.Value%5B16%5D=1&args%5B0%5D.Value%5B17%5D=3&args%5B0%5D.Value%5B18%5D=1&args%5B0%5D.Value%5B19%5D=1&args%5B0%5D.Value%5B20%5D=1&args%5B0%5D.Value%5B21%5D=1&args%5B0%5D.Value%5B22%5D=1&args%5B0%5D.Value%5B23%5D=1&args%5B1%5D.Key=dttype%5B%5D&args%5B1%5D.Value%5B0%5D=&args%5B1%5D.Value%5B1%5D=13&args%5B1%5D.Value%5B2%5D=13&args%5B1%5D.Value%5B3%5D=&args%5B1%5D.Value%5B4%5D=7&args%5B1%5D.Value%5B5%5D=7&args%5B1%5D.Value%5B6%5D=7&args%5B1%5D.Value%5B7%5D=9&args%5B1%5D.Value%5B8%5D=9&args%5B1%5D.Value%5B9%5D=7&args%5B1%5D.Value%5B10%5D=7&args%5B1%5D.Value%5B11%5D=7&args%5B1%5D.Value%5B12%5D=13&args%5B1%5D.Value%5B13%5D=7&args%5B1%5D.Value%5B14%5D=13&args%5B1%5D.Value%5B15%5D=7&args%5B1%5D.Value%5B16%5D=7&args%5B1%5D.Value%5B17%5D=7&args%5B1%5D.Value%5B18%5D=7&args%5B1%5D.Value%5B19%5D=7&args%5B1%5D.Value%5B20%5D=4&args%5B1%5D.Value%5B21%5D=4&args%5B1%5D.Value%5B22%5D=7&args%5B1%5D.Value%5B23%5D=7&args%5B2%5D.Key=key%5B%5D&args%5B2%5D.Value%5B0%5D=rdoFilter&args%5B2%5D.Value%5B1%5D=FromDatePeriodControl&args%5B2%5D.Value%5B2%5D=ToDatePeriodControl&args%5B2%5D.Value%5B3%5D=IsPeriod&args%5B2%5D.Value%5B4%5D=DivisionID&args%5B2%5D.Value%5B5%5D=DivisionID1&args%5B2%5D.Value%5B6%5D=Period&args%5B2%5D.Value%5B7%5D=FromDate&args%5B2%5D.Value%5B8%5D=ToDate&args%5B2%5D.Value%5B9%5D=DepartmentID1&args%5B2%5D.Value%5B10%5D=View&args%5B2%5D.Value%5B11%5D=CreateUserID&args%5B2%5D.Value%5B12%5D=CreateDate&args%5B2%5D.Value%5B13%5D=LastModifyUserID&args%5B2%5D.Value%5B14%5D=LastModifyDate&args%5B2%5D.Value%5B15%5D=EmployeeID&args%5B2%5D.Value%5B16%5D=FullName&args%5B2%5D.Value%5B17%5D=DepartmentID&args%5B2%5D.Value%5B18%5D=DepartmentName&args%5B2%5D.Value%5B19%5D=AbsentCardNo&args%5B2%5D.Value%5B20%5D=TranMonth&args%5B2%5D.Value%5B21%5D=TranYear&args%5B2%5D.Value%5B22%5D=AbsentDate&args%5B2%5D.Value%5B23%5D=AbsentHour&args%5B2%5D.Value%5B24%5D=HRMT2260&args%5B3%5D.Key=value%5B%5D&args%5B3%5D.Value%5B0%5D=1&args%5B3%5D.Value%5B1%5D=${encodeURIComponent(fromDate)}&args%5B3%5D.Value%5B2%5D=${encodeURIComponent(toDate)}&args%5B3%5D.Value%5B3%5D=0&args%5B3%5D.Value%5B4%5D=&args%5B3%5D.Value%5B5%5D=&args%5B3%5D.Value%5B6%5D=&args%5B3%5D.Value%5B7%5D=&args%5B3%5D.Value%5B8%5D=&args%5B3%5D.Value%5B9%5D=&args%5B3%5D.Value%5B10%5D=&args%5B3%5D.Value%5B11%5D=&args%5B3%5D.Value%5B12%5D=&args%5B3%5D.Value%5B13%5D=&args%5B3%5D.Value%5B14%5D=&args%5B3%5D.Value%5B15%5D=${empID}&args%5B3%5D.Value%5B16%5D=&args%5B3%5D.Value%5B17%5D=&args%5B3%5D.Value%5B18%5D=&args%5B3%5D.Value%5B19%5D=&args%5B3%5D.Value%5B20%5D=&args%5B3%5D.Value%5B21%5D=&args%5B3%5D.Value%5B22%5D=&args%5B3%5D.Value%5B23%5D=&args%5B4%5D.Key=systemInfo%5B%5D&args%5B4%5D.Value%5B0%5D=HRMF2260&args%5B4%5D.Value%5B1%5D=HRM&args%5B4%5D.Value%5B2%5D=HRMT2260&strWhere=`;
-  
+
   const body = new URLSearchParams(template);
 
   try {
     const r = await api("/GridCommon/Read?TableName=HRMT2260", body, false);
     // Client-side filter bổ sung để an toàn (bảo vệ kép)
     if (r && r.Data && employeeID) {
-        r.Data = r.Data.filter(item => item.EmployeeID === employeeID);
+      r.Data = r.Data.filter(item => item.EmployeeID === employeeID);
     }
     return r;
   } catch (e) { return { Data: [] }; }
@@ -1012,6 +1012,30 @@ async function getShiftNow(employeeID, date) {
     const res = await api("/HRM/HRMF2360/GetShiftNow", { EmployeeID: employeeID, WorkDate: date }, true);
     return res;
   } catch (e) { return ""; }
+}
+
+async function getRemainingLeave(employeeID) {
+  try {
+    let res = await api("/HRM/HRMF2360/GetRemainingLeave", { EmployeeID: employeeID }, true);
+    
+    // Nếu res là chuỗi (do server trả về JSON string), cần parse thêm một lần nữa
+    if (typeof res === 'string') {
+      try { res = JSON.parse(res); } catch (e) { console.error("[Leave] Parse string fail:", e); }
+    }
+    
+    if (res && res.Table && res.Table[0]) {
+      const d = res.Table[0].DaysRemained;
+      const ot = res.Table[0].OTLeaveDaysRemained;
+      return {
+        days: (d !== undefined && d !== null) ? Number(d).toFixed(1) : "0.0",
+        otDays: (ot !== undefined && ot !== null) ? Number(ot).toFixed(1) : "0.0"
+      };
+    }
+    return { days: "0.0", otDays: "0.0" };
+  } catch (e) { 
+    console.error("[Leave] Error fetching:", e);
+    return { days: "0.0", otDays: "0.0" }; 
+  }
 }
 
 async function getApprovePersons(type = "DXP", deptId = "") {
@@ -1248,7 +1272,7 @@ async function processData(attendanceData, shiftData, leaveData, otData = null, 
   const userSource = attendanceData.Data?.[0] || shiftData.Data?.[0] || {};
   const eFullName = currentUserInfo?.FullName || userSource.FullName || '';
   const eEmployeeID = currentUserInfo?.EmployeeID || userSource.EmployeeID || '';
-  
+
   if (eEmployeeID) {
     document.getElementById("userInfo").innerText = `${eFullName} (${eEmployeeID})`;
   } else {
@@ -1676,11 +1700,15 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<span class="icon">⏳</span> Đang tải...';
 
-      const [keyData, approvers, currentShift] = await Promise.all([
+      const [keyData, approvers, currentShift, leaveData] = await Promise.all([
         getNewVoucherKey(type),
         getApprovePersons(type, currentData.userMeta?.DepartmentID),
-        getShiftNow(currentData.userMeta?.EmployeeID, sqlDate)
+        getShiftNow(currentData.userMeta?.EmployeeID, sqlDate),
+        getRemainingLeave(currentData.userMeta?.EmployeeID)
       ]);
+      
+      typeSelect.dataset.remainLeave = leaveData.days;
+      typeSelect.dataset.otRemainLeave = leaveData.otDays;
 
       const searchInput = document.getElementById("approverSearch");
       const hiddenInput = document.getElementById("approverSelect");
@@ -1841,18 +1869,53 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
     } else if (type === "DXRN") {
       fieldsHtml = `
         <div class="form-row-req">
-          <div class="form-group"><label class="req-label">Từ lúc</label>
+          <div class="form-group" style="flex: 1;"><label class="req-label">Từ lúc</label>
             <div class="time-picker-row">
               ${renderStepper('fromHour', 8, 0, 23)} <span class="sep">:</span> ${renderStepper('fromMin', 0, 0, 45, 15)}
             </div>
+            <label class="asf-checkbox-label" style="margin-top: 10px;">
+              <input type="checkbox" id="goStraight"> Đi thẳng
+            </label>
           </div>
-          <div class="form-group"><label class="req-label">Đến lúc</label>
+          <div class="form-group" style="flex: 1;"><label class="req-label">Đến lúc</label>
             <div class="time-picker-row">
               ${renderStepper('toHour', 10, 0, 23)} <span class="sep">:</span> ${renderStepper('toMin', 0, 0, 45, 15)}
             </div>
+            <label class="asf-checkbox-label" style="margin-top: 10px;">
+              <input type="checkbox" id="comeStraight"> Về thẳng
+            </label>
           </div>
-          <div class="form-group"><label class="req-label">Số giờ vắng</label><input type="number" id="dailyHours" class="form-control" value="2" step="0.5"></div>
-        </div>`;
+          <div class="form-group" style="width: 80px;"><label class="req-label">Số giờ</label><input type="number" id="dailyHours" class="form-control" value="2" step="0.5"></div>
+        </div>
+        
+        <div style="margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border-glass); display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="asf-checkbox-label">
+              <input type="checkbox" id="askForVehicle"> Yêu cầu xe
+            </label>
+            <input type="text" id="vehicleNote" class="form-control" style="margin-top: 8px; display: none;" placeholder="Chiều dùng xe...">
+          </div>
+          <div class="form-group">
+            <label class="asf-checkbox-label">
+              <input type="checkbox" id="noLunch" checked> Không trợ cấp ăn trưa
+            </label>
+            <label class="asf-checkbox-label" style="margin-top: 8px;">
+              <input type="checkbox" id="isOT"> Tính OT
+            </label>
+          </div>
+        </div>
+      `;
+
+      // Post-render logic for DXRN
+      setTimeout(() => {
+        const askVeh = document.getElementById('askForVehicle');
+        const vehNote = document.getElementById('vehicleNote');
+        if (askVeh && vehNote) {
+          askVeh.onchange = (e) => {
+            vehNote.style.display = e.target.checked ? 'block' : 'none';
+          };
+        }
+      }, 0);
     } else if (type === "DXDC") {
       fieldsHtml = `
         <div class="form-row-req">
@@ -1895,8 +1958,7 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
       const approver = approverSelect.value;
       const selectedDeptID = document.getElementById("requestDepartmentSelect").value;
       const selectedDept = DEPARTMENT_LIST.find(d => d.id === selectedDeptID);
-      // const isSeri = document.getElementById("isSeri").checked ? "1" : "0";
-      const isSeri = "0";
+      let isSeri = "0"; // Default
 
       const running = String(Number(currentKeyData.LastKey) + 1).padStart(4, "0");
       const shortYear = y.toString().slice(-2);
@@ -1905,7 +1967,7 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
       let prefix = "DXP";
       if (type === "DXLTG") prefix = "DOT";
       else if (type === "DXDC" || type === "DXBSQT") prefix = "DQT";
-      else if (type === "DXRN") prefix = "DXP"; // Add special case if needed
+      else if (type === "DXRN") prefix = "DOU"; // Changed from DXP to DOU based on success case
 
       const appID = `${prefix}/${mmStr}/${shortYear}/${running}`;
 
@@ -1954,30 +2016,60 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
       const shiftVal = document.getElementById("shiftID")?.value || "";
       if (type === "DXNP") {
         const hours = Number(document.getElementById("dailyHours").value);
+        const remainLeave = typeSelect.dataset.remainLeave || "0.0";
+        const otRemainLeave = typeSelect.dataset.otRemainLeave || "0.0";
         baseData.AbsentTypeID = "7," + document.getElementById("absentType").value;
         baseData.DailyHours = "8," + hours;
         baseData.TotalTime = "8," + hours;
-        baseData.DaysRemained = "8,0.0";
+        baseData.DaysRemained = "8," + remainLeave;
+        baseData.OTDaysRemained = "8," + otRemainLeave;
         baseData.ShiftID = "9," + shiftVal;
       } else if (type === "DXLTG" || type === "DXRN") {
         const fH = document.getElementById("fromHour").innerText;
         const fM = document.getElementById("fromMin").innerText;
         const tH = document.getElementById("toHour").innerText;
         const tM = document.getElementById("toMin").innerText;
-        baseData.FromTime = `13,${fH}:${fM}`;
-        baseData.ToTime = `13,${tH}:${tM}`;
+
         if (type === "DXLTG") {
+          baseData.FromTime = `13,${fH}:${fM}`;
+          baseData.ToTime = `13,${tH}:${tM}`;
           baseData.ShiftID = "9," + shiftVal;
           const otValue = (Number(tH) - Number(fH) + (Number(tM) - Number(fM)) / 60).toFixed(2);
           baseData.OverTime = "8," + otValue;
           baseData.TotalTime = "8," + otValue;
           baseData.DailyHours = "8," + otValue;
-          baseData.DaysRemained = "8,0.0";
+          const remainLeave = typeSelect.dataset.remainLeave || "0.0";
+          const otRemainLeave = typeSelect.dataset.otRemainLeave || "0.0";
+          baseData.DaysRemained = "8," + remainLeave;
+          baseData.OTDaysRemained = "8," + otRemainLeave;
         } else {
-          const hours = Number(document.getElementById("dailyHours").value);
-          baseData.DailyHours = "8," + hours;
-          baseData.TotalTime = "8," + hours;
-          baseData.DaysRemained = "8,0.0";
+          const remainLeave = typeSelect.dataset.remainLeave || "0.0";
+          const otRemainLeave = typeSelect.dataset.otRemainLeave || "0.0";
+          baseData.DailyHours = "8,";
+          baseData.TotalTime = "8,0";
+          baseData.DaysRemained = "8," + remainLeave;
+          baseData.OTDaysRemained = "8," + otRemainLeave;
+          baseData.DivisionID = "7,"; // DivisionID is empty for DXRN
+
+          // DXRN specific fields
+          const goStr = document.getElementById("goStraight")?.checked ? "1" : "0";
+          const comeStr = document.getElementById("comeStraight")?.checked ? "1" : "0";
+          const askVeh = document.getElementById("askForVehicle")?.checked ? "1" : "0";
+          const noLunch = document.getElementById("noLunch")?.checked ? "1" : "0";
+          const isOT = document.getElementById("isOT")?.checked ? "1" : "0";
+          const vehNote = document.getElementById("vehicleNote")?.value || "";
+
+          baseData.GoStraight = "6," + goStr;
+          baseData.ComeStraight = "6," + comeStr;
+          baseData.IsSeri = "6," + isSeri;
+          baseData.AskForVehicle = "6," + askVeh;
+          baseData.HaveLunch = "6," + noLunch;
+          baseData.IsPreShiftOT = "6," + isOT;
+          baseData.UseVehicle = "7," + vehNote; // UseVehicle for "Chiều dùng xe"
+
+          // New structure: include _DT fields with full datetime
+          baseData.RequestFromDate_DT = `13,${dateStr} ${fH}:${fM}:00`;
+          baseData.RequestToDate_DT = `13,${dateStr} ${tH}:${tM}:00`;
         }
       } else if (type === "DXBSQT") {
         const sH = document.getElementById("swipeHour").innerText;
@@ -1993,7 +2085,9 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = []) {
         baseData.ShiftID = "9," + document.getElementById("newShiftID").value;
       }
 
-      let res = await submitVoucher({ dataScreen: [[baseData]], voucherPackages: [] });
+      const payload = { dataScreen: [[baseData]], voucherPackages: [] };
+      console.log("[Submission] Sending Payload:", JSON.stringify(payload, null, 2));
+      let res = await submitVoucher(payload);
 
       // Retry logic if duplicate ID
       if (res.Status === 1 && res.Message && res.Message.includes("ApplicationID")) {
