@@ -66,7 +66,7 @@ app.innerHTML = `
     <div class="brand">
       <div class="icon-box">📅</div>
       <div>
-        <h1>Attendance Dashboard</h1>
+        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.9</span></h1>
         <div id="userInfo" class="user-badge">Đang tải...</div>
       </div>
     </div>
@@ -1647,11 +1647,18 @@ async function processData(attendanceData, shiftData, leaveData, otData = null, 
     const pm = (d.description || "").match(/\[(bp_\d+_[a-z0-9]+)\]/);
     if (pm) {
       const pid = pm[1];
-      const [cy, cm] = SELECTED_MONTH.split("-").map(Number);
       if (!bpPairs[pid]) bpPairs[pid] = { pairId: pid };
-      const dObj = { d: startDay, m: cm, y: cy };
-      if (d.requestType === 'DXNP' || d.requestType === 'DXP') bpPairs[pid].tgt = dObj;
-      else if (d.requestType === 'DXLTG') bpPairs[pid].src = dObj;
+      const datePart = (d.fromDate !== "N/A" ? d.fromDate : d.date).split(" ")[0];
+      const [rd, rm, ry] = datePart.split("/").map(Number);
+      const dObj = { d: rd, m: rm, y: ry };
+      
+      const desc = (d.description || "").trim().toLowerCase();
+      // Phân biệt dựa trên từ khóa bắt đầu chuỗi để tránh nhầm lẫn khi cả 2 từ khóa cùng xuất hiện
+      if (desc.startsWith("nghỉ") || desc.startsWith("nghi")) {
+        bpPairs[pid].tgt = dObj;
+      } else if (desc.startsWith("làm bù") || desc.startsWith("lam bu") || desc.startsWith("làm thêm") || desc.startsWith("lam them")) {
+        bpPairs[pid].src = dObj;
+      }
     }
   });
 

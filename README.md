@@ -28,6 +28,17 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 
 ## 🆕 Changelog
 
+### v2.9 — 2026-05-09
+> **Auto-fill Optimization & Stability Fix**
+
+- 🚀 **Cải tiến Modal Tạo đơn**: 
+    - Tự động điền **Diễn giải** và **Lý do chi tiết** dựa trên loại đơn được chọn (DXNP, DXLTG, DXBSQT, DXRN, DXDC) khi thay đổi trong dropdown.
+    - Bảo toàn các gợi ý thông minh (Smart Suggestions) ở lần nạp đầu tiên để tránh ghi đè dữ liệu phân tích.
+- 🛠️ **Fix Syntax Error**: 
+    - Khắc phục lỗi `Identifier 'updateFields' has already been declared` bằng cách đổi tên hàm thành `refreshRequestFields`.
+    - Tối ưu hóa luồng nạp dữ liệu khởi tạo (`loadInitialData`) giúp Modal hoạt động mượt mà hơn.
+- 🎨 **UI/UX Polish**: Cân chỉnh lại vị trí các nút bấm và thông báo trạng thái trong Batch Mode.
+
 ### v2.8 — 2026-05-08
 > **Refactor Batch Request & Logic Optimization**
 
@@ -37,6 +48,12 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 - 🔄 **Chuẩn hóa Shift ID**: Tự động chuẩn hóa mã ca làm việc (normalizeShiftId) khi thực hiện bù phép, tránh lỗi sai định dạng từ server.
 - 🛠️ **Cải tiến DXRN trong Batch Mode**: Bổ sung đầy đủ các trường thông tin (DailyHours, TotalTime) cho đơn xin ra ngoài khi tạo hàng loạt.
 - 🩹 **Bug Fixes**: Sửa lỗi lấy giá trị giờ quẹt thẻ (Swipe Time) không chính xác trong một số trường hợp tạo đơn bổ sung quẹt thẻ hàng loạt.
+
+
+
+| Multi-day Select | Create a Request |
+| :---: | :---: |
+| ![Giao diện chính](video/Multi-day-select.png) | !![Giao diện chính](video/create-a-request-2.png) |
 
 ### v2.7 — 2026-05-08
 > **Batch Attendance Request — Tạo đơn hàng loạt & Tối ưu UI**
