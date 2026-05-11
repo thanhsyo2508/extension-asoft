@@ -66,7 +66,7 @@ app.innerHTML = `
     <div class="brand">
       <div class="icon-box">📅</div>
       <div>
-        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.9</span></h1>
+        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.10</span></h1>
         <div id="userInfo" class="user-badge">Đang tải...</div>
       </div>
     </div>
@@ -1079,7 +1079,12 @@ const SHIFT_LIST = [
 ];
 const DEFAULT_SHIFT_ID = SHIFT_LIST[0].id;
 const normalizeShiftId = (shiftId) => {
-  const normalized = (shiftId || "").trim();
+  let val = "";
+  if (typeof shiftId === 'string') val = shiftId;
+  else if (shiftId && typeof shiftId === 'object') {
+    val = shiftId.ShiftID || shiftId.ID || shiftId.id || "";
+  }
+  const normalized = String(val || "").trim();
   return SHIFT_LIST.some(s => s.id === normalized) ? normalized : DEFAULT_SHIFT_ID;
 };
 
@@ -2020,8 +2025,11 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
   const statusDiv = document.getElementById("createStatus");
   const submitBtn = document.getElementById("submitRequest");
 
-  const dateStr = `${d.toString().padStart(2, '0')}/${m.toString().padStart(2, '0')}/${y}`;
-  const sqlDate = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+  const dd = String(d || '').padStart(2, '0');
+  const mm = String(m || '').padStart(2, '0');
+  const yy = String(y || '');
+  const dateStr = `${dd}/${mm}/${yy}`;
+  const sqlDate = `${yy}-${mm}-${dd}`;
 
   cTitle.innerText = isBatch ? `Tạo đơn hàng loạt (${batchDates.length} ngày)` : `Tạo đơn - ${dateStr}`;
   statusDiv.style.display = "none";
@@ -2409,7 +2417,7 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
         searchInput.value = `${savedApprover.name} (${savedApprover.id})`;
       }
 
-      const shiftAuto = normalizeShiftId((currentShift || "").trim() || currentData.shiftMap[d]);
+      const shiftAuto = normalizeShiftId(currentShift || currentData.shiftMap[d]);
       typeSelect.dataset.shift = shiftAuto;
 
       // Batch: render rows table now that shift is known
@@ -2421,7 +2429,8 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
       submitBtn.innerHTML = isBatch ? `<span class="icon">🚀</span> Gửi ${batchDates.length} đơn` : '<span class="icon">🚀</span> Gửi đơn';
       return keyData;
     } catch (e) {
-      statusDiv.innerText = "Lỗi khi tải dữ liệu khởi tạo.";
+      console.error("[Attendance Dashboard] Error in loadInitialData:", e);
+      statusDiv.innerText = "Lỗi khi tải dữ liệu khởi tạo: " + (e.message || e);
       statusDiv.className = "status-box danger";
       statusDiv.style.display = "block";
       submitBtn.disabled = false;
@@ -2494,12 +2503,12 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
         <div class="form-row-req">
           <div class="form-group"><label class="req-label">Từ lúc</label>
             <div class="time-picker-row">
-              ${renderStepper('fromHour', fH, 0, 23)} <span class="sep">:</span> ${renderStepper('fromMin', fM, 0, 45, 15)}
+              ${renderStepper('fH', fH, 0, 23)} <span class="sep">:</span> ${renderStepper('fM', fM, 0, 45, 15)}
             </div>
           </div>
           <div class="form-group"><label class="req-label">Đến lúc</label>
             <div class="time-picker-row">
-              ${renderStepper('toHour', tH, 0, 23)} <span class="sep">:</span> ${renderStepper('toMin', tM, 0, 45, 15)}
+              ${renderStepper('tH', tH, 0, 23)} <span class="sep">:</span> ${renderStepper('tM', tM, 0, 45, 15)}
             </div>
           </div>
         </div>
@@ -2541,7 +2550,7 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
         <div class="form-row-req">
           <div class="form-group" style="flex: 1;"><label class="req-label">Từ lúc</label>
             <div class="time-picker-row">
-              ${renderStepper('fromHour', 8, 0, 23)} <span class="sep">:</span> ${renderStepper('fromMin', 0, 0, 45, 15)}
+              ${renderStepper('fH', 8, 0, 23)} <span class="sep">:</span> ${renderStepper('fM', 0, 0, 45, 15)}
             </div>
             <label class="asf-checkbox-label" style="margin-top: 10px;">
               <input type="checkbox" id="goStraight"> Đi thẳng
@@ -2549,7 +2558,7 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
           </div>
           <div class="form-group" style="flex: 1;"><label class="req-label">Đến lúc</label>
             <div class="time-picker-row">
-              ${renderStepper('toHour', 10, 0, 23)} <span class="sep">:</span> ${renderStepper('toMin', 0, 0, 45, 15)}
+              ${renderStepper('tH', 10, 0, 23)} <span class="sep">:</span> ${renderStepper('tM', 0, 0, 45, 15)}
             </div>
             <label class="asf-checkbox-label" style="margin-top: 10px;">
               <input type="checkbox" id="comeStraight"> Về thẳng

@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard Dashboard v2.9
+# 📅 Asoft Attendance Dashboard Dashboard v2.10
 
-[![Version](https://img.shields.io/badge/version-2.9.0-blue.svg)](https://img.shields.io/badge/version-2.9.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.10.0-blue.svg)](https://img.shields.io/badge/version-2.10.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.9.zip](asoft-attendance-v2.9.zip)
+[Tải về asoft-attendance-v2.10.zip](asoft-attendance-v2.10.zip)
 
 ---
 
@@ -27,6 +27,16 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 ---
 
 ## 🆕 Changelog
+
+### v2.10 — 2026-05-11
+> **Critical OT Fix & Initialization Robustness**
+
+- 🛠️ **Sửa lỗi tính giờ OT**: Khắc phục lỗi nghiêm trọng khiến thời gian làm thêm (Overtime) bị tính bằng 0 do sai lệch ID phần tử trong form đơn lẻ.
+- 🧠 **Tăng cường độ ổn định (Robustness)**:
+    - Xử lý lỗi crash khi nhận dữ liệu ca làm việc (ShiftNow) dưới dạng Object từ API thay vì String.
+    - Cải thiện hàm `normalizeShiftId` để tương thích tốt hơn với dữ liệu thực tế từ ERP.
+- 📅 **Khởi tạo form an toàn**: Tối ưu hóa việc tạo chuỗi ngày tháng (`dateStr`, `sqlDate`) để tránh lỗi khi các tham số đầu vào bị null/undefined.
+- 📝 **Debug nâng cao**: Bổ sung thông báo lỗi chi tiết trên giao diện khi việc nạp dữ liệu khởi tạo thất bại, giúp người dùng và kỹ thuật viên dễ dàng chẩn đoán sự cố.
 
 ### v2.9 — 2026-05-09
 > **Auto-fill Optimization & Stability Fix**
