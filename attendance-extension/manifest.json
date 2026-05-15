@@ -1,6 +1,6 @@
 {
   "name": "Attendance Dashboard Pro",
-  "version": "2.10",
+  "version": "2.11",
   "manifest_version": 3,
   "description": "Bảng điều khiển chấm công hiện đại cho Asoft",
   "host_permissions": [

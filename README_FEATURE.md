@@ -1,273 +1,128 @@
-# 📅 Attendance Dashboard Extension
-
-Một extension cho Microsoft Edge giúp quản lý và theo dõi chấm công một cách hiệu quả từ hệ thống ASP.NET HRM.
-
----
-
-### 🎨 Giao Diện & Trải Nghiệm (v2.0)
-- **Glass Morphism Premium**: Thiết kế hiện đại với hiệu ứng mờ nhám và viền sắc nét.
-- **Hệ thống Theme (6 màu)**: 
-  - 🌑 Dark (Mặc định) | ☀️ Light | 🌸 Spring | 🌻 Summer | 🍂 Autumn | ❄️ Winter
-  - Lưu trạng thái theme qua `chrome.storage.sync`.
-- **Micro-animations**:
-  - ✨ **Glow Pulse**: Phát sáng nhẹ cho ngày làm việc đúng giờ.
-  - 🏎️ **Light Sweep**: Hiệu ứng vượt sáng khi di chuột qua ô ngày.
-- **Bộ chọn Tháng/Năm Tùy chỉnh**: Giao diện chọn tháng hiện đại, điều hướng năm nhanh và nút "Hôm nay".
-- **Thống kê Tương tác**: Nhấn vào thẻ thống kê (Ngày công, Trễ, Sớm) để highlight ngay các ngày tương ứng trên lịch.
-- **Skeleton Loading**: Trạng thái chờ với độ tương phản cao, tối ưu theo từng theme.
-
-### 📤 Tiện Ích & Dữ Liệu
-- **Xuất báo cáo CSV/Excel**: Tải dữ liệu chấm công tháng hiện tại chỉ với 1 click (đã xử lý lỗi font Tiếng Việt).
-- **Hỗ trợ đơn từ phức tạp**: 
-  - Gộp hiển thị khi một ngày có nhiều đơn (📄 x2 Đơn).
-  - Hỗ trợ parser cho đơn Bổ sung quẹt thẻ (**DXBSQT**).
-- **Tự động hóa**: Mặc định load tháng hiện tại ngay khi mở, tự động cập nhật khi chuyển tháng.
-
----
-
-## 🚀 Cài Đặt
-
-### Yêu Cầu
-- **Microsoft Edge** v90+ (hoặc Chromium-based browser)
-- Quyền truy cập hệ thống HRM tại `http://192.168.10.213:14444`
-
-### Cài Đặt Thủ Công (Developer Mode)
-
-1. Mở Microsoft Edge → `edge://extensions`
-2. Bật **Developer mode** (góc dưới trái)
-3. Nhấp **Load unpacked**
-4. Chọn thư mục `attendance-extension/`
-5. Extension sẵn sàng sử dụng ✅
-
----
-
-## 📁 Cấu Trúc Dự Án
-
-```
-attendance-dashboard/
-├── attendance-extension/
-│   ├── manifest.json              # Cấu hình extension v3
-│   ├── content.js                 # Logic chính (V2.0 ~1000+ dòng)
-│   ├── popup.html                 # Popup mặc định
-│   └── calendar.css               # Stylesheet tùy chọn
-├── .gitignore                     # Git ignore file
-├── README.md                      # Tài liệu này
-├── attendance-calendar.js         # Script cũ (tham khảo)
-└── [các file khác]
-```
-
----
-
-## 🔌 API Integration
-
-### 1️⃣ GET Period Boundaries
-```
-POST /Period/BeginEndDate
-```
-Lấy giới hạn kỳ kế toán hiện tại
-
-### 2️⃣ SET Period (Accounting Month)
-```
-POST /Period/Update
-Parameters:
-  - DivisionIDPeriod: "MA"
-  - Period: "03/2026"
-  - BeginDate: "01/03/2026" (DD/MM/YYYY)
-  - EndDate: "31/03/2026"   (DD/MM/YYYY)
-  - TranMonth: "03"
-  - TranYear: "2026"
-```
-
-### 3️⃣ Attendance Records
-```
-POST /GridCommon/Read?TableName=HRMT2260
-Filter by AbsentDate range
-```
-
-### 4️⃣ Shift Information
-```
-POST /GridCommon/ReadEdit?TableName=HRMT2323
-```
-
-### 5️⃣ Leave Requests
-```
-POST /GridCommon/Read?TableName=OOT9000
-Filter by CreateDate range
-```
-
-### 6️⃣ Request Details
-```
-GET /ViewMasterDetail2/Index/HRM/HRMF2362?PK={id}&Table=OOT9000
-```
-
----
-
-## 🛠️ Công Nghệ
-
-- **Vanilla JavaScript** - Không framework, không dependencies
-- **CSS3** - Glass Morphism, CSS Variables, Flexbox
-- **HTML5** - Semantic markup
-- **localStorage** - Persistent config storage
-
----
-
-## ⚙️ Configuration
-
-### localStorage Key
-```json
-"asoft-attendance-config": {
-  "top": "100px",
-  "left": "100px",
-  "width": "1080px",
-  "height": "auto",
-  "zoom": 1
-}
-```
-
-### Time Constants
-- **Check-in threshold**: 08:00 (480 minutes)
-- **Check-out threshold**: 16:45 (1005 minutes)
-
-### CSS Variables
-```css
---primary: #10b981        /* Green */
---warning: #f59e0b        /* Yellow */
---danger: #ef4444         /* Red */
---request: #a855f7        /* Purple */
---bg-glass: rgba(...)     /* Dark background */
-```
-
----
-
-## 📱 Responsive Breakpoints
-
-| Width | Behavior |
-|-------|----------|
-| < 650px | Ẩn sidebar stats |
-| < 950px | Compact mode |
-| ≥ 950px | Full layout |
-
----
-
-## 🔐 Security
-
-- ✅ Header `X-Requested-With: XMLHttpRequest` trên tất cả request
-- ✅ Không lưu mật khẩu hoặc dữ liệu nhạy cảm
-- ✅ Chỉ gọi API nội bộ
-- ✅ HTTPS-ready (sử dụng khi server có SSL)
-
----
-
-## 📊 manifest.json
-
-```json
-{
-  "manifest_version": 3,
-  "name": "Attendance Dashboard",
-  "description": "Quản lý chấm công từ hệ thống HRM",
-  "version": "1.0",
-  "permissions": ["storage"],
-  "content_scripts": [
-    {
-      "matches": ["*://*/*"],
-      "js": ["content.js"],
-      "run_at": "document_end"
-    }
-  ]
-}
-```
-
----
-
-## 📤 Chuẩn Bị Đẩy Lên Microsoft Edge Add-ons
-
-### Bước 1: Chuẩn Bị Tài Liệu
-- ✅ `.gitignore` - Hoàn thành
-- ✅ `README.md` - Hoàn thành (file này)
-- ✅ `manifest.json` - Phiên bản 3+
-- ⏳ Icon 128x128 (`icon-128.png`)
-- ⏳ Icon 48x48 (`icon-48.png`)
-- ⏳ Screenshot 1280x800 (khuyến cáo)
-
-### Bước 2: Tạo Package
-```bash
-# Nén thư mục extension
-zip -r attendance-dashboard-v1.0.zip attendance-extension/
-```
-
-### Bước 3: Đăng Ký
-1. Truy cập [Partner Center](https://partner.microsoft.com)
-2. Đăng nhập hoặc tạo tài khoản
-3. Tạo Extension listing mới
-4. Upload `.zip` file
-5. Điền thông tin:
-   - Tên, mô tả (EN & VN)
-   - Ảnh chụp màn hình
-   - Danh mục (Productivity)
-   - Privacy policy
-6. Gửi review (3-7 ngày)
-
-### Bước 4: Xuất Bản
-- Sau khi được phê duyệt, extension sẽ xuất hiện trên [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons)
-
----
-
-## 🐛 Debugging
-
-### Console Logs
-Mở DevTools: `F12` → Console tab
-
-Tìm logs từ extension:
-- "Calculated dates:" - Kiểm tra tính toán ngày
-- "Period Update Payload:" - Xem request body
-- "Period Update HTTP Status:" - Xem mã trạng thái
-- "Debug Data:" - Kiểm tra dữ liệu nhận được
-
-### Network Inspector
-- Tab **Network** để xem request/response
-- Lọc theo `/Period/Update` hoặc `/GridCommon/Read`
-- Kiểm tra status code (200 = OK, 500 = Error)
-
----
-
-## 📞 Hỗ Trợ
-
-Nếu gặp lỗi:
-1. Kiểm tra console (F12)
-2. Xem Network tab để debug API
-3. Đảm bảo đã login vào hệ thống
-4. Thử refresh extension bằng `Ctrl+Shift+R`
-
----
-
-## 📝 Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 2.8 | 08/05/2026 | Bù Phép Drag-Drop, SVG Overlay, Smart Suggestion |
-| 2.9 | 08/05/2026 | Tự động phát hiện liên kết Bù Phép từ mô tả, Hiển thị Mã đơn từ (Application ID) |
-
----
-
-## 📋 Checklist Trước Khi Đẩy Lên
-
-- [ ] `.gitignore` được tạo
-- [ ] `README.md` hoàn thành
-- [ ] `manifest.json` sử dụng v3
-- [ ] Không có console errors
-- [ ] Test trên Edge thực
-- [ ] `content.js` không có hardcoded debug logs
-- [ ] Icon assets được tạo (128x128, 48x48)
-- [ ] Screenshot chất lượng cao (1280x800)
-- [ ] Tất cả images có kích thước < 1MB
-
----
-
-## 📜 License
-
-Copyright © 2026. All rights reserved.
-
----
-
-**Made with ❤️ for HRM Efficiency**  
-Last updated: 08/05/2026 (v2.9)
+# \ud83d\udcc5 Attendance Dashboard Extension
+ 
+ M\u1ed9t extension cho Microsoft Edge gi\u00fap qu\u1ea3n l\u00fd v\u00e0 theo d\u00f5i ch\u1ea5m c\u00f4ng m\u1ed9t c\u00e1ch hi\u1ec7u qu\u1ea3 t\u1eeb h\u1ec7 th\u1ed1ng ASP.NET HRM.
+ 
+ ---
+ 
+ ### \ud83c\udfa8 Giao Di\u1ec7n & Tr\ud83e\uddfa Nghi\u1ec7m (v2.0)
+ - **Glass Morphism Premium**: Thi\u1ebft k\u1ebf hi\u1ec7n \u0111\u1ea1i v\u1edbi hi\u1ec7u \u1ee9ng m\u1edd nh\u00e1m v\u00e0 vi\u1ec1n s\ud83e\uddfa n\u00e9t.
+ - **H\u1ec7 th\u1ed1ng Theme (6 m\u00e0u)**: 
+   - \ud83c\udf11 Dark (M\u1eb7c \u0111\u1ecbnh) | \u2600\ufe0f Light | \ud83c\udf38 Spring | \ud83c\udf3b Summer | \ud83c\udf42 Autumn | \u2744\ufe0f Winter
+   - L\u01b0u tr\u1ea1ng th\u00e1i theme qua `chrome.storage.sync`.
+ - **Micro-animations**:
+   - \u2728 **Glow Pulse**: Ph\u00e1t s\u00e1ng nh\u1eb9 cho ng\u00e0y l\u00e0m vi\u1ec7c \u0111\u00fang gi\u1edd.
+   - \ud83c\udfce\ufe0f **Light Sweep**: Hi\u1ec7u \u1ee9ng v\u01b0\u1ee3t s\u00e1ng khi di chu\u1ed9t qua \u00f4 ng\u00e0y.
+ - **B\u1ed9 ch\u1ecdn Th\u00e1ng/N\u0103m T\u00f9y ch\u1ec9nh**: Giao di\u1ec7n ch\u1ecdn th\u00e1ng hi\u1ec7n \u0111\u1ea1i, \u0111i\u1ec1u h\u01b0\u1edbng n\u0103m nhanh v\u00e0 n\u00fat \"H\u00f4m nay\".
+ - **Th\u1ed1ng k\u00ea T\u01b0\u01a1ng t\u00e1c**: Nh\u1ea5n v\u00e0o th\u1ebb th\u1ed1ng k\u00ea (Ng\u00e0y c\u00f4ng, Tr\u1ec3, S\u1edbm) \u0111\u1ec3 highlight ngay c\u00e1c ng\u00e0y t\u01b0\u01a1ng \u1ee9ng tr\u00ean l\u1ecbch.
+ - **Skeleton Loading**: Tr\u1ea1ng th\u00e1i ch\u1edd v\u1edbi \u0111\u1ed9 t\u01b0\u01a1ng ph\u1ea3n cao, t\u1ed1i \u01b0u theo t\u1eebng theme.
+ 
+ ### \ud83d\udce4 Ti\u1ec7n \u00cdch & D\u1eef Li\u1ec7u
+ - **Xu\u1ea5t b\u00e1o c\u00e1o CSV/Excel**: T\u1ea3i d\u1eef li\u1ec7u ch\u1ea5m c\u00f4ng th\u00e1ng hi\u1ec7n t\u1ea1i ch\u1ec9 v\u1edbi 1 click (\u0111\u00e3 x\u1eed l\u00fd l\u1ed7i font Ti\u1ebfng Vi\u1ec7t).
+ - **H\u1ed7 tr\u1ee3 \u0111\u01a1n t\u1eeb ph\u1ee9c t\u1ea1p**: 
+   - G\u1ed9p hi\u1ec3n th\u1ecb khi m\u1ed9t ng\u00e0y c\u00f3 nhi\u1ec1u \u0111\u01a1n (\ud83d\udcc4 x2 \u0110\u01a1n).
+   - H\u1ed7 tr\u1ee3 parser cho \u0111\u01a1n B\u1ed9 sung qu\u1ebft th\u1ebb (**DXBSQT**).
+ - **T\u1ef1 \u0111\u1ed9ng h\u00f3a**: M\u1eb7c \u0111\u1ecbnh load th\u00e1ng hi\u1ec7n t\u1ea1i ngay khi m\u1edf, t\u1ef1 \u0111\u1ed9ng c\u1eadp nh\u1eadt khi chuy\u1ec3n th\u00e1ng.
+ 
+ ---
+ 
+ ## \ud83d\ude80 C\u00e0i \u0110\u1eb7t
+ 
+ ### Y\u00eau C\u1ea7u
+ - **Microsoft Edge** v90+ (ho\u1eb7c Chromium-based browser)
+ - Quy\u1ec1n truy c\u1eadp h\u1ec7 th\u1ed1ng HRM t\u1ea1i `http://192.168.10.213:14444`
+ 
+ ### C\u00e0i \u0110\u1eb7t Th\u1ee7 C\u00f4ng (Developer Mode)
+ 
+ 1. M\u1edf Microsoft Edge \u2192 `edge://extensions`
+ 2. B\u1eadt **Developer mode** (g\u00f3c d\u01b0\u1edbi tr\u00e1i)
+ 3. Nh\u1ea5p **Load unpacked**
+ 4. Ch\u1ecdn th\u01b0 m\u1ee5c `attendance-extension/`
+ 5. Extension s\u1eb5n s\u00e0ng s\u1eed d\u1ee5ng \u2705
+ 
+ ---
+ 
+ ## \ud83d\udcc1 C\u1ea5u Tr\u00fac D\u1ef1 \u00c1n
+ 
+ ```
+ attendance-dashboard/
+ \u251c\u2500\u2500 attendance-extension/
+ \u2502   \u251c\u2500\u2500 manifest.json              # C\u1ea5u h\u00ecnh extension v3
+ \u2502   \u251c\u2500\u2500 content.js                 # Logic ch\u00ednh
+ \u2502   \u251c\u2500\u2500 popup.html                 # Popup m\u1eb7c \u0111\u1ecbnh
+ \u2502   \u2514\u2500\u2500 calendar.css               # Stylesheet t\u00f9y ch\u1ecdn
+ \u251c\u2500\u2500 .gitignore                     # Git ignore file
+ \u251c\u2500\u2500 README.md                      # T\u00e0i li\u1ec7u n\u00e0y
+ \u2514\u2500\u2500 README_FEATURE.md              # Chi ti\u1ebft t\u00ednh n\u0103ng
+ ```
+ 
+ ---
+ 
+ ## \ud83d\udd0c API Integration
+ 
+ ### 1\ufe0f\u20e3 GET Period Boundaries
+ ```
+ POST /Period/BeginEndDate
+ ```
+ L\u1ea5y gi\u1edbi h\u1ea1n k\u1ef3 k\u1ebf to\u00e1n hi\u1ec7n t\u1ea1i
+ 
+ ### 2\ufe0f\u20e3 SET Period (Accounting Month)
+ ```
+ POST /Period/Update
+ Parameters:
+   - DivisionIDPeriod: \"MA\"
+   - Period: \"03/2026\"
+   - BeginDate: \"01/03/2026\" (DD/MM/YYYY)
+   - EndDate: \"31/03/2026\"   (DD/MM/YYYY)
+   - TranMonth: \"03\"
+   - TranYear: \"2026\"
+ ```
+ 
+ ### 3\ufe0f\u20e3 Attendance Records
+ ```
+ POST /GridCommon/Read?TableName=HRMT2260
+ Filter by AbsentDate range
+ ```
+ 
+ ---
+ 
+ ## \ud83d\udee0\ufe0f C\u00f4ng Ngh\u1ec7
+ 
+ - **Vanilla JavaScript** - Kh\u00f4ng framework, kh\u00f4ng dependencies
+ - **CSS3** - Glass Morphism, CSS Variables, Flexbox
+ - **HTML5** - Semantic markup
+ - **localStorage** - Persistent config storage
+ 
+ ---
+ 
+ ## \ud83d\udcc4 manifest.json
+ 
+ ```json
+ {
+   \"manifest_version\": 3,
+   \"name\": \"Attendance Dashboard Pro\",
+   \"version\": \"2.11\",
+   \"permissions\": [\"storage\", \"cookies\"]
+ }
+ ```
+ 
+ ---
+ 
+ ## \ud83d\udcdd Version History
+ 
+ | Version | Date | Changes |
+ |---------|------|---------|
+ | 2.11 | 15/05/2026 | Flexible Shift Swap (T7), M\u0169i t\u00ean 2 chi\u1ec1u SVG, About Modal, Unicode Fix |
+ | 2.10 | 11/05/2026 | Fix l\u1ed7i t\u00ednh to\u00e1n gi\u1edd OT, c\u1ea3i thi\u1ec7n \u0111\u1ed9 \u1ed5n \u0111\u1ecbnh khi kh\u1edfi t\u1ea1o |
+ | 2.9 | 08/05/2026 | T\u1ef1 \u0111\u1ed9ng ph\u00e1t hi\u1ec7n li\u00ean k\u1ebft B\u00f9 Ph\u00e9p t\u1eeb m\u00f4 t\u1ea3, Hi\u1ec3n th\u1ecb M\u00e3 \u0111\u01a1n t\u1eeb |
+ | 2.8 | 08/05/2026 | B\u00f9 Ph\u00e9p Drag-Drop, SVG Overlay, Smart Suggestion |
+ 
+ ---
+ 
+ ## \ud83d\udcdc License
+ 
+ Copyright \u00a9 2026. All rights reserved.
+ 
+ ---
+ 
+ **Made with \u2764\ufe0f for HRM Efficiency**  
+ Last updated: 15/05/2026 (v2.11)

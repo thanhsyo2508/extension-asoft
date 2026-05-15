@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard Dashboard v2.10
+# 📅 Asoft Attendance Dashboard v2.11
 
-[![Version](https://img.shields.io/badge/version-2.10.0-blue.svg)](https://img.shields.io/badge/version-2.10.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.11.0-blue.svg)](https://img.shields.io/badge/version-2.11.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.10.zip](asoft-attendance-v2.10.zip)
+[Tải về asoft-attendance-v2.11.zip](asoft-attendance-v2.11.zip)
 
 ---
 
@@ -27,6 +27,15 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 ---
 
 ## 🆕 Changelog
+
+### v2.11 — 2026-05-15
+> **Flexible Shift Swap & Bidirectional Visualization**
+
+- ✨ **Hoán đổi ca T7 linh động**: Hỗ trợ kéo thả 2 chiều giữa T7 cố định và T7 đã đi làm.
+- 🏹 **Mũi tên 2 chiều Premium**: Cải tiến SVG hiển thị 2 mũi tên đối nghịch rõ nét cho các ngày hoán đổi.
+- 🧠 **Smart Drag Context**: Tự động ưu tiên Đổi ca hoặc Bù phép thông minh dựa trên ô đích.
+- ℹ️ **About Modal**: Thêm bảng thông tin phần mềm, lịch sử cập nhật và liên kết GitHub trực tiếp.
+- 🛠️ **Unicode Core Fix**: Khắc phục triệt để lỗi SyntaxError liên quan đến Unicode escape sequence.
 
 ### v2.10 — 2026-05-11
 > **Critical OT Fix & Initialization Robustness**
