@@ -516,6 +516,7 @@ style.innerHTML = `
 }
 .main-content {
   display: flex;
+  margin-left: 8px;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
@@ -972,6 +973,16 @@ button, .nav-btn, .mp-month-btn, .mp-today-btn, .theme-selector button, .month-d
   border-radius: 20px;
   padding: 1px 6px;
   white-space: nowrap;
+}
+.batch-row-time-badge {
+  font-size: 10px;
+  background: rgba(255,255,255,0.08);
+  color: var(--text-muted);
+  border: 1px solid var(--border-glass);
+  border-radius: 20px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  margin-left: 4px;
 }
 .batch-row-fields {
   display: flex;
@@ -2302,12 +2313,15 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
         const dd = dt.d.toString().padStart(2,'0');
         const mm = dt.m.toString().padStart(2,'0');
         const dayRecs = (currentData.map[dt.d] || []).slice().sort();
-        const hasOT = dayRecs.length >= 2 && !isWorkday(dt.d, dt.m, dt.y);
-        const otBadge = (type === 'DXLTG' && hasOT)
-          ? `<span class="batch-row-ot-badge">⏱${dayRecs[0].slice(0,5)}–${dayRecs[dayRecs.length-1].slice(0,5)}</span>` : '';
+        let timeBadge = '';
+        if (dayRecs.length > 0) {
+          const first = dayRecs[0].slice(0, 5);
+          const last = dayRecs.length >= 2 ? dayRecs[dayRecs.length - 1].slice(0, 5) : '?';
+          timeBadge = `<span class="batch-row-time-badge" title="Giờ quẹt thẻ thực tế">🕒 ${first}–${last}</span>`;
+        }
         return `
           <div class="batch-row" id="batch-row-${idx}">
-            <span class="batch-row-date">${dd}/${mm} ${otBadge}</span>
+            <span class="batch-row-date">${dd}/${mm}${timeBadge}</span>
             <div class="batch-row-fields">${renderRowFields(type, dt, idx, shiftAuto)}</div>
             <div class="batch-row-reason">
               <input type="text" class="form-control row-reason" data-idx="${idx}"

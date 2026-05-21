@@ -29,9 +29,10 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 ## 🆕 Changelog
 
 ### v2.12 — 2026-05-21
-> **Overtime (OT) Calculation Lunch Hour Fix**
+> **Overtime (OT) Calculation Lunch Hour Fix & Batch Mode Enhancements**
 
 - 🛠️ **Sửa lỗi tính giờ làm thêm (OT)**: Tự động phát hiện và trừ đi 45 phút nghỉ trưa (12:00 - 12:45) cho các đơn làm thêm giờ (DXLTG) bao phủ khoảng nghỉ trưa (như từ 08:00 đến 16:45), giúp kết quả trả về chính xác 8.0h thay vì 8.75h.
+- 🕒 **Luôn hiển thị giờ vào/ra thực tế**: Trong bảng chọn ngày hàng loạt (Batch mode), luôn hiển thị mốc thời gian quẹt thẻ vào/ra thực tế (nếu có dữ liệu) bên cạnh ngày tháng, giúp người dùng dễ dàng theo dõi và điền thông tin chính xác.
 
 ### v2.11 — 2026-05-15
 > **Flexible Shift Swap & Bidirectional Visualization**

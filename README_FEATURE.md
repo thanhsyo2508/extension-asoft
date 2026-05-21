@@ -111,7 +111,7 @@
  
  | Version | Date | Changes |
  |---------|------|---------|
- | 2.12 | 21/05/2026 | Sửa lỗi tính giờ làm thêm (OT) trừ giờ nghỉ trưa 45 phút |
+ | 2.12 | 21/05/2026 | Sửa lỗi tính giờ OT (trừ 45p nghỉ trưa), luôn hiển thị giờ vào/ra thực tế trong bảng Batch |
  | 2.11 | 15/05/2026 | Flexible Shift Swap (T7), Mũi tên 2 chiều SVG, About Modal, Unicode Fix |
  | 2.10 | 11/05/2026 | Fix lỗi tính toán giờ OT, cải thiện độ ổn định khi khởi tạo |
  | 2.9 | 08/05/2026 | Tự động phát hiện liên kết Bù Phép từ mô tả, Hiển thị Mã đơn từ (Application ID) |
