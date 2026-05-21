@@ -66,7 +66,7 @@ app.innerHTML = `
     <div class="brand">
       <div class="icon-box">📅</div>
       <div>
-        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.11</span></h1>
+        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.12</span></h1>
         <div id="userInfo" class="user-badge">Đang tải...</div>
       </div>
     </div>
@@ -294,7 +294,7 @@ app.innerHTML = `
       <div style="text-align: center; margin-bottom: 20px;">
         <div style="font-size: 40px; margin-bottom: 10px;">📅</div>
         <h3 style="margin: 0; color: var(--primary);">Attendance Dashboard Pro</h3>
-        <p style="margin: 5px 0; color: var(--text-muted); font-size: 13px;">Version 2.10</p>
+        <p style="margin: 5px 0; color: var(--text-muted); font-size: 13px;">Version 2.12</p>
       </div>
       <div class="form-group">
         <label class="req-label">Thông tin cơ bản</label>
@@ -1136,6 +1136,16 @@ const UTILS = {
     const mins = UTILS.parseTime(t);
     if (isFirst) return mins > 480 ? "late" : "normal";
     return mins < 1005 ? "early" : "normal";
+  },
+  calculateOTHours: (fromTime, toTime) => {
+    const start = UTILS.parseTime(fromTime);
+    let end = UTILS.parseTime(toTime);
+    if (end < start) end += 24 * 60; // Làm việc qua đêm
+    // Khoảng nghỉ trưa: 12:00 -> 12:45 (720 -> 765 phút)
+    const lunchStart = 720;
+    const lunchEnd = 765;
+    const overlap = Math.max(0, Math.min(end, lunchEnd) - Math.max(start, lunchStart));
+    return Number(((end - start - overlap) / 60).toFixed(2));
   },
   parseHTMLDetail: (htmlString) => {
     const parser = new DOMParser();
@@ -2894,8 +2904,8 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
           baseData.ShiftID = '9,' + shiftVal;
           const otValue = Number(
             isBatch
-              ? (batchDates[i].overrideHours || (Number(tH) - Number(fH) + (Number(tM) - Number(fM)) / 60).toFixed(2))
-              : (targetDate.overrideHours || (Number(tH) - Number(fH) + (Number(tM) - Number(fM)) / 60).toFixed(2))
+              ? (batchDates[i].overrideHours || UTILS.calculateOTHours(`${fH}:${fM}`, `${tH}:${tM}`))
+              : (targetDate.overrideHours || UTILS.calculateOTHours(`${fH}:${fM}`, `${tH}:${tM}`))
           );
           baseData.OverTime = '8,' + otValue;
           baseData.TotalTime = '8,' + otValue;

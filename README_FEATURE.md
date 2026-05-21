@@ -94,35 +94,36 @@
  
  ---
  
- ## \ud83d\udcc4 manifest.json
+ ## 📄 manifest.json
  
  ```json
  {
-   \"manifest_version\": 3,
-   \"name\": \"Attendance Dashboard Pro\",
-   \"version\": \"2.11\",
-   \"permissions\": [\"storage\", \"cookies\"]
+   "manifest_version": 3,
+   "name": "Attendance Dashboard Pro",
+   "version": "2.12",
+   "permissions": ["storage", "cookies"]
  }
  ```
  
  ---
  
- ## \ud83d\udcdd Version History
+ ## 📝 Version History
  
  | Version | Date | Changes |
  |---------|------|---------|
- | 2.11 | 15/05/2026 | Flexible Shift Swap (T7), M\u0169i t\u00ean 2 chi\u1ec1u SVG, About Modal, Unicode Fix |
- | 2.10 | 11/05/2026 | Fix l\u1ed7i t\u00ednh to\u00e1n gi\u1edd OT, c\u1ea3i thi\u1ec7n \u0111\u1ed9 \u1ed5n \u0111\u1ecbnh khi kh\u1edfi t\u1ea1o |
- | 2.9 | 08/05/2026 | T\u1ef1 \u0111\u1ed9ng ph\u00e1t hi\u1ec7n li\u00ean k\u1ebft B\u00f9 Ph\u00e9p t\u1eeb m\u00f4 t\u1ea3, Hi\u1ec3n th\u1ecb M\u00e3 \u0111\u01a1n t\u1eeb |
- | 2.8 | 08/05/2026 | B\u00f9 Ph\u00e9p Drag-Drop, SVG Overlay, Smart Suggestion |
+ | 2.12 | 21/05/2026 | Sửa lỗi tính giờ làm thêm (OT) trừ giờ nghỉ trưa 45 phút |
+ | 2.11 | 15/05/2026 | Flexible Shift Swap (T7), Mũi tên 2 chiều SVG, About Modal, Unicode Fix |
+ | 2.10 | 11/05/2026 | Fix lỗi tính toán giờ OT, cải thiện độ ổn định khi khởi tạo |
+ | 2.9 | 08/05/2026 | Tự động phát hiện liên kết Bù Phép từ mô tả, Hiển thị Mã đơn từ (Application ID) |
+ | 2.8 | 08/05/2026 | Bù Phép Drag-Drop, SVG Overlay, Smart Suggestion |
  
  ---
  
- ## \ud83d\udcdc License
+ ## 📜 License
  
- Copyright \u00a9 2026. All rights reserved.
+ Copyright © 2026. All rights reserved.
  
  ---
  
- **Made with \u2764\ufe0f for HRM Efficiency**  
- Last updated: 15/05/2026 (v2.11)
+ **Made with ❤️ for HRM Efficiency**  
+ Last updated: 21/05/2026 (v2.12)

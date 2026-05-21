@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard v2.11
+# 📅 Asoft Attendance Dashboard v2.12
 
-[![Version](https://img.shields.io/badge/version-2.11.0-blue.svg)](https://img.shields.io/badge/version-2.11.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.12.0-blue.svg)](https://img.shields.io/badge/version-2.12.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.11.zip](asoft-attendance-v2.11.zip)
+[Tải về asoft-attendance-v2.12.zip](asoft-attendance-v2.12.zip)
 
 ---
 
@@ -27,6 +27,11 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 ---
 
 ## 🆕 Changelog
+
+### v2.12 — 2026-05-21
+> **Overtime (OT) Calculation Lunch Hour Fix**
+
+- 🛠️ **Sửa lỗi tính giờ làm thêm (OT)**: Tự động phát hiện và trừ đi 45 phút nghỉ trưa (12:00 - 12:45) cho các đơn làm thêm giờ (DXLTG) bao phủ khoảng nghỉ trưa (như từ 08:00 đến 16:45), giúp kết quả trả về chính xác 8.0h thay vì 8.75h.
 
 ### v2.11 — 2026-05-15
 > **Flexible Shift Swap & Bidirectional Visualization**
