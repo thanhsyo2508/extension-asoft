@@ -66,7 +66,7 @@ app.innerHTML = `
     <div class="brand">
       <div class="icon-box">📅</div>
       <div>
-        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.12</span></h1>
+        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.13</span></h1>
         <div id="userInfo" class="user-badge">Đang tải...</div>
       </div>
     </div>
@@ -294,7 +294,7 @@ app.innerHTML = `
       <div style="text-align: center; margin-bottom: 20px;">
         <div style="font-size: 40px; margin-bottom: 10px;">📅</div>
         <h3 style="margin: 0; color: var(--primary);">Attendance Dashboard Pro</h3>
-        <p style="margin: 5px 0; color: var(--text-muted); font-size: 13px;">Version 2.12</p>
+        <p style="margin: 5px 0; color: var(--text-muted); font-size: 13px;">Version 2.13</p>
       </div>
       <div class="form-group">
         <label class="req-label">Thông tin cơ bản</label>
@@ -303,7 +303,7 @@ app.innerHTML = `
       <div class="form-group" style="margin-top: 15px;">
         <label class="req-label">Tính năng mới (Cập nhật)</label>
         <ul style="font-size: 13px; padding-left: 20px; margin-top: 5px; color: var(--text-main);">
-          <li>Hỗ trợ thao tác Kéo & Thả (Drag & Drop) để <strong>Bù công nhật</strong> và <strong>Hoán đổi ca T7</strong> trực quan trên lịch.</li>
+          <li>Hỗ trợ thao tác Kéo & Thả (Drag & Drop) để <strong>Bù phép</strong> và <strong>Hoán đổi ca T7</strong> trực quan trên lịch.</li>
           <li>Thêm các Theme mới: Spring, Summer, Autumn, Winter.</li>
           <li>Hỗ trợ gom nhóm ngày bằng <strong>Chọn nhiều (Batch Mode)</strong> để tạo đơn hàng loạt.</li>
           <li>Hiển thị mũi tên nối liên kết trực tiếp trên giao diện lịch.</li>
@@ -3080,8 +3080,8 @@ async function openCompSwapModal(srcDay, tgtDay) {
           <div style="font-weight:700; color:var(--text-main); margin-bottom:4px;">Sẽ tạo đồng thời 2 đơn</div>
           <div style="color:var(--text-muted); font-size:13px;">
             <b style="color:var(--warning)">Đơn 1</b>: Nghỉ phép năm ngày <b>${tgtDate}</b>
-            &nbsp;&nbsp;|  
-            <b style="color:var(--primary)">Đơn 2</b>: Làm bù công nhật ngày <b>${srcDate}</b>
+            &nbsp;&nbsp;|  
+            <b style="color:var(--primary)">Đơn 2</b>: Làm bù phép ngày <b>${srcDate}</b>
           </div>
         </div>
       </div>
@@ -3108,10 +3108,10 @@ async function openCompSwapModal(srcDay, tgtDay) {
         </div>
 
         <div class="cs-card" style="border-left:4px solid var(--primary);">
-          <h3 style="color:var(--primary); margin:0 0 12px 0; font-size:13px; text-transform:uppercase;">📋 Đơn 2 — Làm bù công nhật</h3>
+          <h3 style="color:var(--primary); margin:0 0 12px 0; font-size:13px; text-transform:uppercase;">📋 Đơn 2 — Làm bù phép</h3>
           <div class="req-grid">
             <div class="req-field"><span class="req-label">Ngày làm bù</span><span class="req-val" style="color:var(--primary);font-weight:700;">${srcDate}</span></div>
-            <div class="req-field"><span class="req-label">Loại phép</span><span class="req-val">BN</span></div>
+            <div class="req-field"><span class="req-label">Loại phép</span><span class="req-val">BP</span></div>
             <div class="req-field" style="grid-column:span 2;"><span class="req-label">Số giờ</span>
               <input type="number" id="csHours2" class="form-control" value="8" step="0.5" style="margin-top:4px;">
             </div>
@@ -3123,7 +3123,7 @@ async function openCompSwapModal(srcDay, tgtDay) {
           </div>
           <div style="margin-top:10px;"><span class="req-label">Lý do</span>
             <input type="text" id="csReason2" class="form-control" style="margin-top:4px;"
-              value="Làm bù công nhật ngày ${srcDate} thay cho ngày nghỉ phép ${tgtDate} [${pairId}]">
+              value="Làm bù phép ngày ${srcDate} thay cho ngày nghỉ phép ${tgtDate} [${pairId}]">
           </div>
         </div>
       </div>
@@ -3281,13 +3281,13 @@ async function openCompSwapModal(srcDay, tgtDay) {
 
       if (res1.Status !== 0 && !res1.UpdateSuccess) throw new Error(`Đơn 1 thất bại: ${res1.Message || 'Lỗi server'}`);
 
-      // Đơn 2: DXNP-BN cho ngày làm bù (srcDay)
+      // Đơn 2: DXNP-BP cho ngày làm bù (srcDay)
       submitBtn.innerHTML = '<span class="icon">⏳</span> Đang gửi đơn 2...';
       const key2 = await getNewVoucherKey('DXNP');
       const mm2 = String(srcDay.m).padStart(2, '0'), yy2 = String(srcDay.y).slice(-2);
       const run2 = String(Number(key2.LastKey) + 1).padStart(4, '0');
       const appID2 = `DXP/${mm2}/${yy2}/${run2}`;
-      const payload2 = buildPayload(srcDay.d, srcDay.m, srcDay.y, 'BN', hours2, shift2, reason2, key2, appID2);
+      const payload2 = buildPayload(srcDay.d, srcDay.m, srcDay.y, 'BP', hours2, shift2, reason2, key2, appID2);
       let res2 = await submitVoucher({ dataScreen: [[payload2]], voucherPackages: [] });
 
       if (res2.Status === 1 && res2.Message?.includes('ApplicationID')) {

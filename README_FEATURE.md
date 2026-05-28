@@ -87,7 +87,9 @@
  
  ## \ud83d\udee0\ufe0f C\u00f4ng Ngh\u1ec7
  
- - **Vanilla JavaScript** - Kh\u00f4ng framework, kh\u00f4ng dependencies
+ ## 🛠️ Công Nghệ
+ 
+ - **Vanilla JavaScript** - Không framework, không dependencies
  - **CSS3** - Glass Morphism, CSS Variables, Flexbox
  - **HTML5** - Semantic markup
  - **localStorage** - Persistent config storage
@@ -100,7 +102,7 @@
  {
    "manifest_version": 3,
    "name": "Attendance Dashboard Pro",
-   "version": "2.12",
+   "version": "2.13",
    "permissions": ["storage", "cookies"]
  }
  ```
@@ -111,6 +113,7 @@
  
  | Version | Date | Changes |
  |---------|------|---------|
+ | 2.13 | 28/05/2026 | Đổi loại đơn thứ 2 khi Bù Phép từ Làm bù công nhật (BN) sang Làm bù phép (BP) |
  | 2.12 | 21/05/2026 | Sửa lỗi tính giờ OT (trừ 45p nghỉ trưa), luôn hiển thị giờ vào/ra thực tế trong bảng Batch |
  | 2.11 | 15/05/2026 | Flexible Shift Swap (T7), Mũi tên 2 chiều SVG, About Modal, Unicode Fix |
  | 2.10 | 11/05/2026 | Fix lỗi tính toán giờ OT, cải thiện độ ổn định khi khởi tạo |
@@ -126,4 +129,4 @@
  ---
  
  **Made with ❤️ for HRM Efficiency**  
- Last updated: 21/05/2026 (v2.12)
+ Last updated: 28/05/2026 (v2.13)

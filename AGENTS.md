@@ -4,7 +4,7 @@
 
 **Attendance Dashboard Pro** là Chrome/Edge Extension (Manifest V3) viết bằng Vanilla JavaScript, dùng để quản lý chấm công và đơn từ trên nền tảng HRM ASP.NET của Asoft.
 
-- **Version**: 2.10
+- **Version**: 2.13
 - **Platform**: Chromium-based browsers (Edge, Chrome)
 - **Target URL**: `http://*/Contentmaster/Index/HRM/HRMF2260*`
 
@@ -33,7 +33,7 @@ extension-asoft/
   - `chrome.storage.sync` — lưu cấu hình server (`asoft-server-config`) và liên kết bù phép per-user (`asoft-bp-links-{empID}`)
   - `localStorage` — lưu vị trí/kích thước/zoom của panel (`asoft-attendance-config`)
 - **API**: Giao tiếp với backend ASP.NET qua hàm `api()`, có interceptor xử lý retry khi trùng ApplicationID
-- **SVG Overlay**: Vẽ mũi tên cong động trên lịch để trực quan hóa liên kết NP↔BN
+- **SVG Overlay**: Vẽ mũi tên cong động trên lịch để trực quan hóa liên kết NP↔BP
 - **User Detection**: Ưu tiên đọc `UserID` từ Cookie, fallback sang DOM selectors (`#EmployeeID`, `[data-employee-id]`, ...)
 
 ## Các API endpoint chính
@@ -84,7 +84,7 @@ Mã dùng trong **`ABSENT_TYPES`** (phân loại ngày nghỉ từ server):
 
 ## Tính năng chính
 
-1. **Bù Phép Drag-Drop**: Kéo ngày OT thả vào ngày nghỉ → tự động tạo 2 đơn DXNP+BN liên kết qua `pairId`, vẽ mũi tên SVG nối 2 ngày
+1. **Bù Phép Drag-Drop**: Kéo ngày OT thả vào ngày nghỉ → tự động tạo 2 đơn DXNP+BP liên kết qua `pairId`, vẽ mũi tên SVG nối 2 ngày
 2. **Smart Suggestion**: Tự phân tích dữ liệu chấm công → gợi ý loại đơn phù hợp, bao gồm phát hiện **double-swipe** (2 lần quẹt trong < 4 giờ → coi như 1 lần quẹt)
 3. **6 Theme System**: Chuyển đổi theme realtime, lưu vào `chrome.storage.sync`
 4. **Tương tác lịch**: Highlight ngày vi phạm khi nhấn thẻ thống kê Sidebar
