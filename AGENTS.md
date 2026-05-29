@@ -4,7 +4,7 @@
 
 **Attendance Dashboard Pro** là Chrome/Edge Extension (Manifest V3) viết bằng Vanilla JavaScript, dùng để quản lý chấm công và đơn từ trên nền tảng HRM ASP.NET của Asoft.
 
-- **Version**: 2.13
+- **Version**: 2.14
 - **Platform**: Chromium-based browsers (Edge, Chrome)
 - **Target URL**: `http://*/Contentmaster/Index/HRM/HRMF2260*`
 

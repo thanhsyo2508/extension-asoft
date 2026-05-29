@@ -66,7 +66,7 @@ app.innerHTML = `
     <div class="brand">
       <div class="icon-box">📅</div>
       <div>
-        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.13</span></h1>
+        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.14</span></h1>
         <div id="userInfo" class="user-badge">Đang tải...</div>
       </div>
     </div>
@@ -294,7 +294,7 @@ app.innerHTML = `
       <div style="text-align: center; margin-bottom: 20px;">
         <div style="font-size: 40px; margin-bottom: 10px;">📅</div>
         <h3 style="margin: 0; color: var(--primary);">Attendance Dashboard Pro</h3>
-        <p style="margin: 5px 0; color: var(--text-muted); font-size: 13px;">Version 2.13</p>
+        <p style="margin: 5px 0; color: var(--text-muted); font-size: 13px;">Version 2.14</p>
       </div>
       <div class="form-group">
         <label class="req-label">Thông tin cơ bản</label>
@@ -1128,16 +1128,20 @@ const SHIFT_LIST = [
   { id: "CA01 - 09:00", text: "CA01 (09:00)" },
   { id: "CA01 - 10:00", text: "CA01 (10:00)" },
   { id: "CA01 - 12:45", text: "CA01 (12:45)" },
-  { id: "CA02 - 22:00", text: "CA02 (22:00)" }
+  { id: "CA02 - 22:00", text: "CA02 (22:00)" },
+  { id: "", text: "-- Ca trống --" }
 ];
 const DEFAULT_SHIFT_ID = SHIFT_LIST[0].id;
 const normalizeShiftId = (shiftId) => {
-  let val = "";
+  if (shiftId === undefined || shiftId === null) return DEFAULT_SHIFT_ID;
+  let val = null;
   if (typeof shiftId === 'string') val = shiftId;
   else if (shiftId && typeof shiftId === 'object') {
-    val = shiftId.ShiftID || shiftId.ID || shiftId.id || "";
+    val = shiftId.ShiftID !== undefined ? shiftId.ShiftID : (shiftId.ID !== undefined ? shiftId.ID : shiftId.id);
   }
-  const normalized = String(val || "").trim();
+  if (val === undefined || val === null) return DEFAULT_SHIFT_ID;
+  const normalized = String(val).trim();
+  if (normalized === "") return ""; // Ca trống
   return SHIFT_LIST.some(s => s.id === normalized) ? normalized : DEFAULT_SHIFT_ID;
 };
 
@@ -2233,10 +2237,14 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
         </div>`;
 
       if (type === 'DXNP') {
+        const isCompVal = dt.absentType === 'BN' || dt.absentType === 'BP';
         return `
           <select class="form-control row-absent-type" data-idx="${idx}" title="Loại phép" style="min-width:130px">
             ${ABSENT_TYPES.map(t => `<option value="${t.id}" ${dt.absentType === t.id ? 'selected' : ''}>${t.text}</option>`).join('')}
           </select>
+          <label class="row-compen-label" style="display: ${isCompVal ? 'inline-flex' : 'none'}; align-items: center; font-size: 11px; margin-left: 4px; gap: 2px;">
+            <input type="checkbox" class="row-compen" data-idx="${idx}" ${dt.isCompen !== false ? 'checked' : ''}> Bù
+          </label>
           <input type="number" class="form-control row-hours" data-idx="${idx}" value="${dt.overrideHours || 8}" step="0.5" title="Số giờ" style="width:56px">
           <select class="form-control row-shift" data-idx="${idx}" title="Ca làm việc" style="min-width:110px">
             ${SHIFT_LIST.map(s => `<option value="${s.id}" ${normalizeShiftId(dt.shiftID || shift) === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
@@ -2359,7 +2367,26 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
       });
       // Sync absent type
       batchTable.querySelectorAll('.row-absent-type').forEach(sel => {
-        sel.onchange = () => { batchDates[parseInt(sel.dataset.idx)].absentType = sel.value; };
+        sel.onchange = () => {
+          const idx = parseInt(sel.dataset.idx);
+          const val = sel.value;
+          batchDates[idx].absentType = val;
+          const isComp = val === 'BN' || val === 'BP';
+          const rowEl = document.getElementById(`batch-row-${idx}`);
+          const label = rowEl?.querySelector('.row-compen-label');
+          const chk = rowEl?.querySelector('.row-compen');
+          if (label && chk) {
+            label.style.display = isComp ? 'inline-flex' : 'none';
+            chk.checked = isComp;
+            batchDates[idx].isCompen = isComp;
+          }
+        };
+      });
+      // Sync compen checkbox
+      batchTable.querySelectorAll('.row-compen').forEach(chk => {
+        chk.onchange = () => {
+          batchDates[parseInt(chk.dataset.idx)].isCompen = chk.checked;
+        };
       });
       // Sync shift
       batchTable.querySelectorAll('.row-shift').forEach(sel => {
@@ -2662,6 +2689,11 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
           </div>
           <div class="form-group"><label class="req-label">Số giờ</label><input type="number" id="dailyHours" class="form-control" value="${suggested.hours || 8}" step="0.5"></div>
         </div>
+        <div class="form-row-req" id="compenWrapper" style="display: none; margin-bottom: 8px;">
+          <label class="asf-checkbox-label">
+            <input type="checkbox" id="requestIsCompen" checked> Làm bù
+          </label>
+        </div>
         <div class="form-row-req">
           <div class="form-group"><label class="req-label">Ca làm việc</label>
             <select id="shiftID" class="form-control">
@@ -2786,6 +2818,29 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
         </div>`;
     }
     dynamicFields.innerHTML = fieldsHtml;
+
+    // Post-render logic for DXNP
+    if (type === "DXNP") {
+      const absSelect = document.getElementById('absentType');
+      const compWrap = document.getElementById('compenWrapper');
+      const compChk = document.getElementById('requestIsCompen');
+      const updateCompenDisplay = () => {
+        if (absSelect && compWrap && compChk) {
+          const isCompType = absSelect.value === 'BN' || absSelect.value === 'BP';
+          compWrap.style.display = isCompType ? 'block' : 'none';
+          if (isCompType) {
+            compChk.checked = true; // default to checked when selecting BN/BP
+          } else {
+            compChk.checked = false;
+          }
+        }
+      };
+      if (absSelect) {
+        absSelect.onchange = updateCompenDisplay;
+        updateCompenDisplay(); // Initial check
+      }
+    }
+
     // We only want to apply suggested values on the FIRST render of fields
     suggested = {}; // Clear after first use to avoid overriding manual changes
     loadInitialData().then(k => currentKeyData = k);
@@ -2907,6 +2962,11 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
           baseData.ShiftID = '9,' + shiftVal;
           const rowReason = isBatch ? batchDates[i].overrideReason : targetDate.overrideReason;
           if (rowReason) { baseData.Description = '12,' + rowReason; baseData.Reason = '7,' + rowReason; }
+
+          const isCompenVal = isBatch
+            ? (rowEl?.querySelector('.row-compen')?.checked ? '1' : '0')
+            : (document.getElementById('requestIsCompen')?.checked ? '1' : '0');
+          baseData.IsCompen = '6,' + isCompenVal;
 
         } else if (type === 'DXLTG') {
           const fH = rowStepVal('fH');
@@ -3101,6 +3161,10 @@ async function openCompSwapModal(srcDay, tgtDay) {
               </select>
             </div>
           </div>
+          <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="csIsCompen1" style="width: auto; margin: 0; cursor: pointer;">
+            <label for="csIsCompen1" style="font-size: 12px; font-weight: 600; cursor: pointer; margin: 0; color: var(--text-muted);">Làm bù (Compensatory)</label>
+          </div>
           <div style="margin-top:10px;"><span class="req-label">Lý do</span>
             <input type="text" id="csReason1" class="form-control" style="margin-top:4px;"
               value="Nghỉ phép năm ngày ${tgtDate}, làm bù vào ngày ${srcDate} [${pairId}]">
@@ -3120,6 +3184,10 @@ async function openCompSwapModal(srcDay, tgtDay) {
                 ${SHIFT_LIST.map(s => `<option value="${s.id}" ${shiftSrc === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
               </select>
             </div>
+          </div>
+          <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="csIsCompen2" checked style="width: auto; margin: 0; cursor: pointer;">
+            <label for="csIsCompen2" style="font-size: 12px; font-weight: 600; cursor: pointer; margin: 0; color: var(--text-main);">Làm bù (Compensatory)</label>
           </div>
           <div style="margin-top:10px;"><span class="req-label">Lý do</span>
             <input type="text" id="csReason2" class="form-control" style="margin-top:4px;"
@@ -3221,7 +3289,7 @@ async function openCompSwapModal(srcDay, tgtDay) {
     submitBtn.innerHTML = '<span class="icon">⏳</span> Đang gửi đơn 1...';
     statusDiv.style.display = 'none';
 
-    const buildPayload = (day, month, year, absentType, hours, shiftVal, reason, keyData, appID) => {
+    const buildPayload = (day, month, year, absentType, hours, shiftVal, reason, keyData, appID, isCompen) => {
       const dateStr = fmt(day, month, year);
       const mmStr = String(month).padStart(2, '0');
       return {
@@ -3252,7 +3320,7 @@ async function openCompSwapModal(srcDay, tgtDay) {
         ApprovePerson01ID: "7," + approver,
         IsSeri: "6,0", GoStraight: "6,0", ComeStraight: "6,0",
         IsPreShiftOT: "6,0", AskForVehicle: "6,0", HaveLunch: "6,0",
-        IsOnTripOT: "6,0", IsCompen: "6,0"
+        IsOnTripOT: "6,0", IsCompen: "6," + (isCompen ? "1" : "0")
       };
     };
 
@@ -3268,7 +3336,8 @@ async function openCompSwapModal(srcDay, tgtDay) {
       const mm1 = String(tgtDay.m).padStart(2, '0'), yy1 = String(tgtDay.y).slice(-2);
       const run1 = String(Number(key1.LastKey) + 1).padStart(4, '0');
       const appID1 = `DXP/${mm1}/${yy1}/${run1}`;
-      const payload1 = buildPayload(tgtDay.d, tgtDay.m, tgtDay.y, 'NP', hours1, shift1, reason1, key1, appID1);
+      const isCompen1 = document.getElementById('csIsCompen1')?.checked ? 1 : 0;
+      const payload1 = buildPayload(tgtDay.d, tgtDay.m, tgtDay.y, 'NP', hours1, shift1, reason1, key1, appID1, isCompen1);
       let res1 = await submitVoucher({ dataScreen: [[payload1]], voucherPackages: [] });
 
       if (res1.Status === 1 && res1.Message?.includes('ApplicationID')) {
@@ -3287,7 +3356,8 @@ async function openCompSwapModal(srcDay, tgtDay) {
       const mm2 = String(srcDay.m).padStart(2, '0'), yy2 = String(srcDay.y).slice(-2);
       const run2 = String(Number(key2.LastKey) + 1).padStart(4, '0');
       const appID2 = `DXP/${mm2}/${yy2}/${run2}`;
-      const payload2 = buildPayload(srcDay.d, srcDay.m, srcDay.y, 'BP', hours2, shift2, reason2, key2, appID2);
+      const isCompen2 = document.getElementById('csIsCompen2')?.checked ? 1 : 0;
+      const payload2 = buildPayload(srcDay.d, srcDay.m, srcDay.y, 'BP', hours2, shift2, reason2, key2, appID2, isCompen2);
       let res2 = await submitVoucher({ dataScreen: [[payload2]], voucherPackages: [] });
 
       if (res2.Status === 1 && res2.Message?.includes('ApplicationID')) {

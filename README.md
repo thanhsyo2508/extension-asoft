@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard v2.13
+# 📅 Asoft Attendance Dashboard v2.14
 
-[![Version](https://img.shields.io/badge/version-2.13.0-blue.svg)](https://img.shields.io/badge/version-2.13.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.14.0-blue.svg)](https://img.shields.io/badge/version-2.14.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.13.zip](asoft-attendance-v2.13.zip)
+[Tải về asoft-attendance-v2.14.zip](asoft-attendance-v2.14.zip)
 
 ---
 
@@ -27,6 +27,12 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 ---
 
 ## 🆕 Changelog
+
+### v2.14 — 2026-05-29
+> **Compensatory Checkbox (IsCompen) & Empty Shift Option**
+
+- ☑️ **Bổ sung Checkbox Làm bù**: Tích hợp trường `IsCompen` (trị giá `"6,1"` khi chọn và `"6,0"` khi không chọn) cho các đơn liên quan đến **Làm bù công nhật (BN)** và **Làm bù phép (BP)** trong đơn xin phép. Tự động kiểm tra mặc định `"IsCompen": "6,1"` khi tạo. Hỗ trợ đầy đủ ở chế độ tạo đơn lẻ, tạo hàng loạt (Batch Mode) và kéo thả bù phép.
+- 📭 **Thêm tùy chọn Ca trống**: Bổ sung lựa chọn `-- Ca trống --` (giá trị Shift ID rỗng `""`) vào cuối danh sách các ca làm việc trong form tạo đơn lẻ/hàng loạt để hỗ trợ các trường hợp đặc biệt không có nội dung ca.
 
 ### v2.13 — 2026-05-28
 > **Bù Phép Application Type Adjustment (BN to BP) & Version Bump**
