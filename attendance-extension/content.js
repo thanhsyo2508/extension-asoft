@@ -3161,10 +3161,6 @@ async function openCompSwapModal(srcDay, tgtDay) {
               </select>
             </div>
           </div>
-          <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="csIsCompen1" style="width: auto; margin: 0; cursor: pointer;">
-            <label for="csIsCompen1" style="font-size: 12px; font-weight: 600; cursor: pointer; margin: 0; color: var(--text-muted);">Làm bù (Compensatory)</label>
-          </div>
           <div style="margin-top:10px;"><span class="req-label">Lý do</span>
             <input type="text" id="csReason1" class="form-control" style="margin-top:4px;"
               value="Nghỉ phép năm ngày ${tgtDate}, làm bù vào ngày ${srcDate} [${pairId}]">
@@ -3184,10 +3180,6 @@ async function openCompSwapModal(srcDay, tgtDay) {
                 ${SHIFT_LIST.map(s => `<option value="${s.id}" ${shiftSrc === s.id ? 'selected' : ''}>${s.text}</option>`).join('')}
               </select>
             </div>
-          </div>
-          <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="csIsCompen2" checked style="width: auto; margin: 0; cursor: pointer;">
-            <label for="csIsCompen2" style="font-size: 12px; font-weight: 600; cursor: pointer; margin: 0; color: var(--text-main);">Làm bù (Compensatory)</label>
           </div>
           <div style="margin-top:10px;"><span class="req-label">Lý do</span>
             <input type="text" id="csReason2" class="form-control" style="margin-top:4px;"
@@ -3336,8 +3328,7 @@ async function openCompSwapModal(srcDay, tgtDay) {
       const mm1 = String(tgtDay.m).padStart(2, '0'), yy1 = String(tgtDay.y).slice(-2);
       const run1 = String(Number(key1.LastKey) + 1).padStart(4, '0');
       const appID1 = `DXP/${mm1}/${yy1}/${run1}`;
-      const isCompen1 = document.getElementById('csIsCompen1')?.checked ? 1 : 0;
-      const payload1 = buildPayload(tgtDay.d, tgtDay.m, tgtDay.y, 'NP', hours1, shift1, reason1, key1, appID1, isCompen1);
+      const payload1 = buildPayload(tgtDay.d, tgtDay.m, tgtDay.y, 'NP', hours1, shift1, reason1, key1, appID1, false);
       let res1 = await submitVoucher({ dataScreen: [[payload1]], voucherPackages: [] });
 
       if (res1.Status === 1 && res1.Message?.includes('ApplicationID')) {
@@ -3356,8 +3347,7 @@ async function openCompSwapModal(srcDay, tgtDay) {
       const mm2 = String(srcDay.m).padStart(2, '0'), yy2 = String(srcDay.y).slice(-2);
       const run2 = String(Number(key2.LastKey) + 1).padStart(4, '0');
       const appID2 = `DXP/${mm2}/${yy2}/${run2}`;
-      const isCompen2 = document.getElementById('csIsCompen2')?.checked ? 1 : 0;
-      const payload2 = buildPayload(srcDay.d, srcDay.m, srcDay.y, 'BP', hours2, shift2, reason2, key2, appID2, isCompen2);
+      const payload2 = buildPayload(srcDay.d, srcDay.m, srcDay.y, 'BP', hours2, shift2, reason2, key2, appID2, true);
       let res2 = await submitVoucher({ dataScreen: [[payload2]], voucherPackages: [] });
 
       if (res2.Status === 1 && res2.Message?.includes('ApplicationID')) {
