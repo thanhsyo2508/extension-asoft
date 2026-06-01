@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard v2.14
+# 📅 Asoft Attendance Dashboard v2.15
 
-[![Version](https://img.shields.io/badge/version-2.14.0-blue.svg)](https://img.shields.io/badge/version-2.14.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.15.0-blue.svg)](https://img.shields.io/badge/version-2.15.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.14.zip](asoft-attendance-v2.14.zip)
+[Tải về asoft-attendance-v2.15.zip](asoft-attendance-v2.15.zip)
 
 ---
 
@@ -27,6 +27,14 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 ---
 
 ## 🆕 Changelog
+
+### v2.15 — 2026-05-29
+> **Sửa lỗi Checkbox OT đơn ra ngoài, Đổi tên hiển thị Đơn xin phép & Gắn Link Mã đơn từ**
+
+- ⏱️ **Sửa lỗi Checkbox OT đơn ra ngoài**: Sửa lỗi cấu trúc dữ liệu khi tạo đơn xin ra ngoài (DXRN) có tích chọn "Tính OT". Đã ánh xạ chính xác vào trường `IsOnTripOT` (giá trị `"6,1"` khi tích chọn và `"6,0"` khi không chọn) thay vì bị nhầm sang `IsPreShiftOT`.
+- 🔄 **Đồng bộ hóa Checkbox Batch Mode**: Trong chế độ tạo đơn hàng loạt (Batch Mode) của đơn DXRN, các thuộc tính checkbox được quét và cập nhật trực tiếp từ trạng thái thực tế của các phần tử DOM trên bảng chọn ngày, khắc phục triệt để lỗi không nhận diện được thay đổi.
+- 📋 **Đổi tên hiển thị Đơn xin phép**: Đổi tên hiển thị của đơn `DXNP` từ "Đơn xin nghỉ phép" / "Đơn xin phép nghỉ" thành `"Đơn xin phép"` (chỉ thay đổi phần hiển thị trên giao diện, không làm ảnh hưởng tới logic mã đơn và API).
+- 🔗 **Gắn Link Mã đơn từ**: Trong bảng chi tiết ngày (`detailModal`), Mã đơn của các đơn từ hiện tại đã được chuyển thành đường dẫn liên kết (`target="_blank"`) giúp người dùng có thể nhấp chuột để mở trực tiếp trang chi tiết đơn trên server.
 
 ### v2.14 — 2026-05-29
 > **Compensatory Checkbox (IsCompen) & Empty Shift Option**

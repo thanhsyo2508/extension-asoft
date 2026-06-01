@@ -101,7 +101,7 @@
  {
    "manifest_version": 3,
    "name": "Attendance Dashboard Pro",
-   "version": "2.14",
+   "version": "2.15",
    "permissions": ["storage", "cookies"]
  }
  ```
@@ -111,8 +111,9 @@
  ## 📝 Version History
  
  | Version | Date | Changes |
- |---------|------|---------|
- | 2.14 | 29/05/2026 | Thêm checkbox Làm bù (IsCompen: "6,1") cho BN/BP, thêm tùy chọn Ca trống ("") |
+|---------|------|---------|
+| 2.15 | 29/05/2026 | Sửa lỗi IsOnTripOT cho đơn xin ra ngoài, đổi tên hiển thị thành Đơn xin phép, thêm link Mã đơn |
+| 2.14 | 29/05/2026 | Thêm checkbox Làm bù (IsCompen: "6,1") cho BN/BP, thêm tùy chọn Ca trống ("") |
  | 2.13 | 28/05/2026 | Đổi loại đơn thứ 2 khi Bù Phép từ Làm bù công nhật (BN) sang Làm bù phép (BP) |
  | 2.12 | 21/05/2026 | Sửa lỗi tính giờ OT (trừ 45p nghỉ trưa), luôn hiển thị giờ vào/ra thực tế trong bảng Batch |
  | 2.11 | 15/05/2026 | Flexible Shift Swap (T7), Mũi tên 2 chiều SVG, About Modal, Unicode Fix |
@@ -129,4 +130,4 @@
  ---
  
  **Made with ❤️ for HRM Efficiency**  
- Last updated: 29/05/2026 (v2.14)
+ Last updated: 29/05/2026 (v2.15)

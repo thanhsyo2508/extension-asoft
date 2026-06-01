@@ -66,7 +66,7 @@ app.innerHTML = `
     <div class="brand">
       <div class="icon-box">📅</div>
       <div>
-        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.14</span></h1>
+        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.15</span></h1>
         <div id="userInfo" class="user-badge">Đang tải...</div>
       </div>
     </div>
@@ -227,7 +227,7 @@ app.innerHTML = `
         <div class="form-group" style="flex: 1;">
           <label class="req-label">Loại đơn</label>
           <select id="requestTypeSelect" class="form-control">
-            <option value="DXNP">Đơn xin nghỉ phép (DXNP)</option>
+            <option value="DXNP">Đơn xin phép (DXNP)</option>
             <option value="DXLTG">Đơn xin làm thêm giờ (DXLTG)</option>
             <option value="DXBSQT">Đơn xin bổ sung quẹt thẻ (DXBSQT)</option>
             <option value="DXRN">Đơn xin ra ngoài (DXRN)</option>
@@ -294,7 +294,7 @@ app.innerHTML = `
       <div style="text-align: center; margin-bottom: 20px;">
         <div style="font-size: 40px; margin-bottom: 10px;">📅</div>
         <h3 style="margin: 0; color: var(--primary);">Attendance Dashboard Pro</h3>
-        <p style="margin: 5px 0; color: var(--text-muted); font-size: 13px;">Version 2.14</p>
+        <p style="margin: 5px 0; color: var(--text-muted); font-size: 13px;">Version 2.15</p>
       </div>
       <div class="form-group">
         <label class="req-label">Thông tin cơ bản</label>
@@ -1174,8 +1174,13 @@ const UTILS = {
       return "N/A";
     };
 
+    let reqType = getVal("RequestTypeID");
+    if (reqType === "Đơn xin phép nghỉ" || reqType === "Đơn xin nghỉ phép") {
+      reqType = "Đơn xin phép";
+    }
+
     return {
-      requestType: getVal("RequestTypeID"),
+      requestType: reqType,
       applicationID: getVal("ApplicationID"),
       description: getVal("Description"),
       fromDate: getValAny(["RequestFromDate", "RequestFromDate_DT", "Date"]),
@@ -2146,12 +2151,15 @@ function openModal(d, m, y, times, requests) {
   if (requests.length > 0) {
     requests.forEach(r => {
       const isPending = r.status !== 'Duyệt';
+      const appIDLink = r.apk
+        ? `<a href="${SERVER_CONFIG.serverHost}/ViewMasterDetail2/Index/HRM/HRMF2362?PK=${r.apk}&Table=OOT9000&key=APK&DivisionID=${SERVER_CONFIG.divisionId || 'MA'}" target="_blank" style="color: var(--primary) !important; text-decoration: underline !important;">${r.applicationID}</a>`
+        : r.applicationID;
       html += `
             <div class="req-item" style="position: relative;">
                 <span class="req-status ${isPending ? 'pending' : ''}">${r.status}</span>
                 <h3>${r.description}</h3>
                 <div class="req-grid">
-                    <div class="req-field"><span class="req-label">Mã đơn</span><span class="req-val">${r.applicationID}</span></div>
+                    <div class="req-field"><span class="req-label">Mã đơn</span><span class="req-val">${appIDLink}</span></div>
                     <div class="req-field"><span class="req-label">Loại</span><span class="req-val">${r.requestType}</span></div>
                     <div class="req-field"><span class="req-label">Thời gian</span><span class="req-val">${r.dailyHours}h</span></div>
                     <div class="req-field"><span class="req-label">Lý do</span><span class="req-val">${r.reason}</span></div>
@@ -3009,14 +3017,14 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
             baseData.ComeStraight = '6,' + (document.getElementById('comeStraight')?.checked ? '1' : '0');
             baseData.AskForVehicle = '6,' + (document.getElementById('askForVehicle')?.checked ? '1' : '0');
             baseData.HaveLunch = '6,' + (document.getElementById('noLunch')?.checked ? '1' : '0');
-            baseData.IsPreShiftOT = '6,' + (document.getElementById('isOT')?.checked ? '1' : '0');
+            baseData.IsOnTripOT = '6,' + (document.getElementById('isOT')?.checked ? '1' : '0');
             baseData.UseVehicle = '7,' + (document.getElementById('vehicleNote')?.value || '');
           } else {
-            baseData.GoStraight = '6,' + (batchDates[i].goStraight ? '1' : '0');
-            baseData.ComeStraight = '6,' + (batchDates[i].comeStraight ? '1' : '0');
-            baseData.AskForVehicle = '6,' + (batchDates[i].askCar ? '1' : '0');
-            baseData.HaveLunch = '6,' + (batchDates[i].noLunch ? '1' : '0');
-            baseData.IsPreShiftOT = '6,' + (batchDates[i].isOT ? '1' : '0');
+            baseData.GoStraight = '6,' + (rowEl?.querySelector('.row-go-straight')?.checked ? '1' : '0');
+            baseData.ComeStraight = '6,' + (rowEl?.querySelector('.row-come-straight')?.checked ? '1' : '0');
+            baseData.AskForVehicle = '6,' + (rowEl?.querySelector('.row-ask-car')?.checked ? '1' : '0');
+            baseData.HaveLunch = '6,' + (rowEl?.querySelector('.row-no-lunch')?.checked ? '1' : '0');
+            baseData.IsOnTripOT = '6,' + (rowEl?.querySelector('.row-is-ot')?.checked ? '1' : '0');
           }
           baseData.IsSeri = '6,' + isSeri;
           baseData.RequestFromDate_DT = `13,${tDateStr} ${fH}:${fM}:00`;
