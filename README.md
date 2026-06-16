@@ -1,6 +1,6 @@
-# 📅 Asoft Attendance Dashboard v2.15
+# 📅 Asoft Attendance Dashboard v2.16
 
-[![Version](https://img.shields.io/badge/version-2.15.0-blue.svg)](https://img.shields.io/badge/version-2.15.0-blue.svg)
+[![Version](https://img.shields.io/badge/version-2.16.0-blue.svg)](https://img.shields.io/badge/version-2.16.0-blue.svg)
 [![Stage](https://img.shields.io/badge/stage-production-emerald.svg)](https://img.shields.io/badge/stage-production-emerald.svg)
 [![Platform](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)](https://img.shields.io/badge/platform-Edge%20|%20Chrome-gray.svg)
 
@@ -13,7 +13,7 @@
 # Tải về extension
 
 ---
-[Tải về asoft-attendance-v2.15.zip](asoft-attendance-v2.15.zip)
+[Tải về asoft-attendance-v2.16.zip](asoft-attendance-v2.16.zip)
 
 ---
 
@@ -26,7 +26,15 @@ Khám phá toàn bộ tính năng và sự mượt mà của giao diện thông 
 
 ---
 
+
 ## 🆕 Changelog
+
+### v2.16 — 2026-06-16
+> **Sửa lỗi ApplicationID padding & Log batch (DXBSQT)**
+
+- 🧩 **Fix ApplicationID padding**: ApplicationID giờ được tạo dựa trên độ dài `LastKey` trả về từ API (giữ zero-padding gốc) để tránh ApplicationID không hợp lệ hoặc trùng lặp.
+- 🐞 **Cải thiện log gửi hàng loạt**: Ghi lại response đầy đủ khi gửi batch thất bại, thu thập thông báo lỗi và hiện chi tiết lỗi lên UI để dễ chẩn đoán.
+- 🔁 **Cải thiện retry**: Tăng tính bền bỉ khi trùng `ApplicationID` bằng cách lấy key mới và tôn trọng padding gốc.
 
 ### v2.15 — 2026-05-29
 > **Sửa lỗi Checkbox OT đơn ra ngoài, Đổi tên hiển thị Đơn xin phép & Gắn Link Mã đơn từ**

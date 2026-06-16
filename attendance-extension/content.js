@@ -66,7 +66,7 @@ app.innerHTML = `
     <div class="brand">
       <div class="icon-box">📅</div>
       <div>
-        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.15</span></h1>
+        <h1>Attendance Dashboard <span style="font-size: 11px; opacity: 0.5; font-weight: 400; vertical-align: middle; margin-left: 4px;">v2.16</span></h1>
         <div id="userInfo" class="user-badge">Đang tải...</div>
       </div>
     </div>
@@ -294,7 +294,7 @@ app.innerHTML = `
       <div style="text-align: center; margin-bottom: 20px;">
         <div style="font-size: 40px; margin-bottom: 10px;">📅</div>
         <h3 style="margin: 0; color: var(--primary);">Attendance Dashboard Pro</h3>
-        <p style="margin: 5px 0; color: var(--text-muted); font-size: 13px;">Version 2.15</p>
+        <p style="margin: 5px 0; color: var(--text-muted); font-size: 13px;">Version 2.16</p>
       </div>
       <div class="form-group">
         <label class="req-label">Thông tin cơ bản</label>
@@ -307,7 +307,11 @@ app.innerHTML = `
           <li>Thêm các Theme mới: Spring, Summer, Autumn, Winter.</li>
           <li>Hỗ trợ gom nhóm ngày bằng <strong>Chọn nhiều (Batch Mode)</strong> để tạo đơn hàng loạt.</li>
           <li>Hiển thị mũi tên nối liên kết trực tiếp trên giao diện lịch.</li>
+          <li><strong>Sửa lỗi ApplicationID:</strong> Tạo <code>ApplicationID</code> giờ tôn trọng zero-padding trả về từ <code>LastKey</code> của ERP để tránh ID không hợp lệ hoặc trùng lặp khi tạo đơn.</li>
+          <li><strong>Cải thiện gửi batch:</strong> Ghi lại response đầy đủ từ server và hiển thị lỗi chi tiết trên giao diện khi gửi hàng loạt thất bại, giúp chẩn đoán nhanh hơn.</li>
+          <li><strong>Retry thông minh khi trùng ID:</strong> Khi <code>ApplicationID</code> trùng, hệ thống sẽ lấy key mới từ server và giữ nguyên định dạng padding trước khi thử lại.</li>
         </ul>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Phiên bản: v2.16 — Fix ApplicationID padding & improved batch logging.</p>
       </div>
       <div class="form-group" style="margin-top: 15px; text-align: center;">
         <a href="https://github.com/thanhsyo2508/extension-asoft" target="_blank" style="display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); color: var(--text-main); text-decoration: none; border-radius: 6px; font-weight: bold; border: 1px solid var(--border-glass);">
@@ -2876,6 +2880,7 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
     const datesToSubmit = isBatch ? batchDates : [{ d, m, y }];
     let successCount = 0;
     let failCount = 0;
+    const failMessages = [];
 
     for (let i = 0; i < datesToSubmit.length; i++) {
       const targetDate = datesToSubmit[i];
@@ -2888,7 +2893,9 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
         // Fetch fresh key for each request in batch to avoid collisions
         const keyData = (i === 0) ? currentKeyData : await getNewVoucherKey(type);
 
-        const running = String(Number(keyData.LastKey) + 1).padStart(4, "0");
+        const lastKeyRaw = String(keyData.LastKey || "");
+        const padWidth = lastKeyRaw.length > 0 ? lastKeyRaw.length : 4;
+        const running = String(Number(lastKeyRaw || 0) + 1).padStart(padWidth, "0");
         const shortYear = tY.toString().slice(-2);
         const mmStr = tM.toString().padStart(2, '0');
 
@@ -3070,21 +3077,27 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
         // Retry once for duplicate ApplicationID
         if (res.Status === 1 && res.Message?.includes("ApplicationID")) {
           const retryKey = await getNewVoucherKey(type);
-          const retryRunning = String(Number(retryKey.LastKey) + 1).padStart(4, "0");
+          const retryLastKeyRaw = String(retryKey.LastKey || "");
+          const retryPad = retryLastKeyRaw.length > 0 ? retryLastKeyRaw.length : 4;
+          const retryRunning = String(Number(retryLastKeyRaw || 0) + 1).padStart(retryPad, "0");
           baseData.ApplicationID = "7," + `${prefix}/${mmStr}/${shortYear}/${retryRunning}`;
           baseData.LastKey = "7," + retryKey.LastKey;
           baseData.LastKeyAPK = "7," + retryKey.LastKeyAPK;
           res = await submitVoucher({ dataScreen: [[baseData]], voucherPackages: [] });
         }
 
-        if (res.Status === 0 || res.UpdateSuccess) {
+        if (res && (res.Status === 0 || res.UpdateSuccess)) {
           successCount++;
         } else {
-          console.error(`[Batch] Failed for ${tDateStr}:`, res.Message);
+          console.error(`[Batch] Failed for ${tDateStr}:`, res);
+          const msg = (res && (res.Message || res.message || (typeof res === 'string' ? res : JSON.stringify(res)))) || 'Unknown error';
+          failMessages.push(`${tDateStr}: ${msg}`);
           failCount++;
         }
       } catch (err) {
         console.error(`[Batch] Error for ${tDateStr}:`, err);
+        const em = err?.message || String(err);
+        failMessages.push(`${tDateStr}: ${em}`);
         failCount++;
       }
     }
@@ -3099,7 +3112,8 @@ async function openCreateRequestModal(d, m, y, attendanceTimes = [], batchDates 
         load();
       }, 2000);
     } else {
-      statusDiv.innerText = "Gửi đơn thất bại toàn bộ!";
+      const uniq = [...new Set(failMessages)].slice(0,5).join('; ');
+      statusDiv.innerText = "Gửi đơn thất bại toàn bộ!" + (uniq ? ` Lỗi: ${uniq}` : '');
       statusDiv.className = "status-box danger";
       statusDiv.style.display = "block";
       submitBtn.disabled = false;

@@ -101,7 +101,7 @@
  {
    "manifest_version": 3,
    "name": "Attendance Dashboard Pro",
-   "version": "2.15",
+   "version": "2.16",
    "permissions": ["storage", "cookies"]
  }
  ```
@@ -112,6 +112,7 @@
  
  | Version | Date | Changes |
 |---------|------|---------|
+| 2.16 | 16/06/2026 | Fix ApplicationID padding & improved batch error logging (DXBSQT) |
 | 2.15 | 29/05/2026 | Sửa lỗi IsOnTripOT cho đơn xin ra ngoài, đổi tên hiển thị thành Đơn xin phép, thêm link Mã đơn |
 | 2.14 | 29/05/2026 | Thêm checkbox Làm bù (IsCompen: "6,1") cho BN/BP, thêm tùy chọn Ca trống ("") |
  | 2.13 | 28/05/2026 | Đổi loại đơn thứ 2 khi Bù Phép từ Làm bù công nhật (BN) sang Làm bù phép (BP) |
@@ -130,4 +131,4 @@
  ---
  
  **Made with ❤️ for HRM Efficiency**  
- Last updated: 29/05/2026 (v2.15)
+ Last updated: 16/06/2026 (v2.16)
